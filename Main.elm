@@ -43,7 +43,7 @@ view model =
     div [] [
         h1 [] [ text "Realtime Collaboration Quickstart" ],
         p [] [ text "Now that your application is running, simply type in either text box and see your changes instantly appear in the other one. Open this same document in a new tab to see it work across tabs."],
-        textarea [ id "text_area_1", onInput TextChanged  ] [ text model.text ]
+        textarea [ id "text_area_1", onInput TextChanged, value model.text ] []
         --button [ id "auth_button" ] [ text "Authorize" ]
     ]
 

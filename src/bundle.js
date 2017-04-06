@@ -8339,14 +8339,14 @@ var _user$project$Main$view = function (model) {
 							_1: {
 								ctor: '::',
 								_0: _elm_lang$html$Html_Events$onInput(_user$project$Main$TextChanged),
-								_1: {ctor: '[]'}
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Attributes$value(model.text),
+									_1: {ctor: '[]'}
+								}
 							}
 						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(model.text),
-							_1: {ctor: '[]'}
-						}),
+						{ctor: '[]'}),
 					_1: {ctor: '[]'}
 				}
 			}

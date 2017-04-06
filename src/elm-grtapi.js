@@ -23,6 +23,11 @@ function elmGrtapi(elmApp) {
           }, true);
         });
       } else {
+          var logoutButton = document.getElementById('logout_button');
+          logoutButton.classList.add('visible');
+          logoutButton.addEventListener('click', function () {
+            window.gapi.auth.signOut();
+          })
           start();
       }
     }, false);
@@ -31,7 +36,8 @@ function elmGrtapi(elmApp) {
   function start() {
     // With auth taken care of, load a file, or create one if there
     // is not an id in the URL.
-    var id = realtimeUtils.getParam('id');
+    var id = '0B3cmYHgSA9yETVhUT0QtMmQtUGs';
+    // var id = realtimeUtils.getParam('id');
     if (id) {
       // Load the document id from the URL
       realtimeUtils.load(id.replace('/', ''), onFileLoaded, onFileInitialize);
