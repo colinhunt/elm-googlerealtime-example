@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Realtime Quickstart</title>
+
+    <!-- Load Styles -->
+    <link href="https://www.gstatic.com/realtime/quickstart-styles.css" rel="stylesheet" type="text/css"/>
+
+    <!-- Load the Realtime JavaScript library -->
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <!-- Load the utility library -->
+    <script src="https://www.gstatic.com/realtime/realtime-client-utils.js"></script>
+    <script src="src/bundle.js"></script>
+    <script src="src/elm-grtapi.js"></script>
+  </head>
+  <body>
+    <div id="app" style="width: 100%"></div>
+    <button id="auth_button">Authorize</button>
+
+    <script>
+      var app = Elm.Main.embed(document.getElementById("app"));
+      elmGrtapi(app);
+    </script>
+</body>
+</html>
