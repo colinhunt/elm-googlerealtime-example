@@ -1,5 +1,5 @@
 function elmGapi(elmApp) {
-  elmApp.ports.gapiLoad.subscribe((gapiConfig) => {
+  elmApp.ports.load.subscribe((gapiConfig) => {
     console.log('gapiLoad', gapiConfig);
     gapi.load(gapiConfig.components, () => initClient(gapiConfig));
   });
@@ -7,13 +7,16 @@ function elmGapi(elmApp) {
   elmApp.ports.call.subscribe((f) => {
     switch (f) {
       case 'signIn':
-        return gapi.auth2.getAuthInstance().signIn();
+        return gapi.auth2.getAuthInstance().signIn({
+          prompt: 'select_account'
+        });
       case 'signOut':
         return gapi.auth2.getAuthInstance().signOut();
     }
   })
 
-  function basicProfile(isSignedIn, basicProfile) {
+  function basicProfile() {
+    const basicProfile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile()
     if (basicProfile) {
       return {
         id: basicProfile.getId(),
@@ -21,16 +24,13 @@ function elmGapi(elmApp) {
         givenName: basicProfile.getGivenName(),
         familyName: basicProfile.getFamilyName(),
         imageUrl: basicProfile.getImageUrl(),
-        email: basicProfile.getEmail(),
-        isSignedIn: isSignedIn
+        email: basicProfile.getEmail()
       }
-    } else {
-      return { isSignedIn: isSignedIn }
     }
   }
 
   function updateUser(isSignedIn) {
-    const userProfile = basicProfile(isSignedIn, gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile());
+    const userProfile = isSignedIn ? basicProfile() : null;
     elmApp.ports.updateUser.send(userProfile);
   }
   

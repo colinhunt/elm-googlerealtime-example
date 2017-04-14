@@ -8260,6 +8260,115 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
+var _user$project$Gapi$updateUser = _elm_lang$core$Native_Platform.incomingPort(
+	'updateUser',
+	_elm_lang$core$Json_Decode$oneOf(
+		{
+			ctor: '::',
+			_0: _elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$core$Json_Decode$map,
+					_elm_lang$core$Maybe$Just,
+					A2(
+						_elm_lang$core$Json_Decode$andThen,
+						function (id) {
+							return A2(
+								_elm_lang$core$Json_Decode$andThen,
+								function (name) {
+									return A2(
+										_elm_lang$core$Json_Decode$andThen,
+										function (givenName) {
+											return A2(
+												_elm_lang$core$Json_Decode$andThen,
+												function (familyName) {
+													return A2(
+														_elm_lang$core$Json_Decode$andThen,
+														function (imageUrl) {
+															return A2(
+																_elm_lang$core$Json_Decode$andThen,
+																function (email) {
+																	return _elm_lang$core$Json_Decode$succeed(
+																		{id: id, name: name, givenName: givenName, familyName: familyName, imageUrl: imageUrl, email: email});
+																},
+																A2(_elm_lang$core$Json_Decode$field, 'email', _elm_lang$core$Json_Decode$string));
+														},
+														A2(_elm_lang$core$Json_Decode$field, 'imageUrl', _elm_lang$core$Json_Decode$string));
+												},
+												A2(_elm_lang$core$Json_Decode$field, 'familyName', _elm_lang$core$Json_Decode$string));
+										},
+										A2(_elm_lang$core$Json_Decode$field, 'givenName', _elm_lang$core$Json_Decode$string));
+								},
+								A2(_elm_lang$core$Json_Decode$field, 'name', _elm_lang$core$Json_Decode$string));
+						},
+						A2(_elm_lang$core$Json_Decode$field, 'id', _elm_lang$core$Json_Decode$string))),
+				_1: {ctor: '[]'}
+			}
+		}));
+var _user$project$Gapi$load = _elm_lang$core$Native_Platform.outgoingPort(
+	'load',
+	function (v) {
+		return {
+			components: v.components,
+			client_id: v.client_id,
+			discovery_docs: _elm_lang$core$Native_List.toArray(v.discovery_docs).map(
+				function (v) {
+					return v;
+				}),
+			scopes: v.scopes
+		};
+	});
+var _user$project$Gapi$call = _elm_lang$core$Native_Platform.outgoingPort(
+	'call',
+	function (v) {
+		return v;
+	});
+var _user$project$Gapi$signIn = _user$project$Gapi$call('signIn');
+var _user$project$Gapi$signOut = _user$project$Gapi$call('signOut');
+var _user$project$Gapi$Config = F4(
+	function (a, b, c, d) {
+		return {components: a, client_id: b, discovery_docs: c, scopes: d};
+	});
+var _user$project$Gapi$BasicProfile = F6(
+	function (a, b, c, d, e, f) {
+		return {id: a, name: b, givenName: c, familyName: d, imageUrl: e, email: f};
+	});
+var _user$project$Gapi$SignedIn = function (a) {
+	return {ctor: 'SignedIn', _0: a};
+};
+var _user$project$Gapi$SignedOut = {ctor: 'SignedOut'};
+var _user$project$Gapi$SignOut = {ctor: 'SignOut'};
+var _user$project$Gapi$SignIn = {ctor: 'SignIn'};
+
+var _user$project$Main$displayUserProfile = function (user) {
+	var _p0 = A2(_elm_lang$core$Debug$log, 'displayUserProfile', user);
+	if (_p0.ctor === 'SignedIn') {
+		var _p1 = _p0._0;
+		return A2(
+			_elm_lang$html$Html$span,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$img,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$src(_p1.imageUrl),
+						_1: {ctor: '[]'}
+					},
+					{ctor: '[]'}),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(_p1)),
+					_1: {ctor: '[]'}
+				}
+			});
+	} else {
+		return _elm_lang$html$Html$text('Please sign in!');
+	}
+};
 var _user$project$Main$folder_name = 'Elm Gapi Example';
 var _user$project$Main$file_name = 'elm-gapi-example.json';
 var _user$project$Main$gapiConfig = {
@@ -8272,135 +8381,53 @@ var _user$project$Main$gapiConfig = {
 	},
 	scopes: A2(_elm_lang$core$Basics_ops['++'], 'https://www.googleapis.com/auth/drive.metadata.readonly ', 'https://www.googleapis.com/auth/drive.file')
 };
-var _user$project$Main$initGapiUser = {id: '', name: '', givenName: '', familyName: '', imageUrl: '', email: '', isSignedIn: false};
+var _user$project$Main$initModel = {
+	ctor: '_Tuple2',
+	_0: {user: _user$project$Gapi$SignedOut, text: 'elm_init'},
+	_1: _user$project$Gapi$load(_user$project$Main$gapiConfig)
+};
 var _user$project$Main$receiveData = _elm_lang$core$Native_Platform.incomingPort('receiveData', _elm_lang$core$Json_Decode$string);
-var _user$project$Main$updateUser = _elm_lang$core$Native_Platform.incomingPort(
-	'updateUser',
-	A2(
-		_elm_lang$core$Json_Decode$andThen,
-		function (id) {
-			return A2(
-				_elm_lang$core$Json_Decode$andThen,
-				function (name) {
-					return A2(
-						_elm_lang$core$Json_Decode$andThen,
-						function (givenName) {
-							return A2(
-								_elm_lang$core$Json_Decode$andThen,
-								function (familyName) {
-									return A2(
-										_elm_lang$core$Json_Decode$andThen,
-										function (imageUrl) {
-											return A2(
-												_elm_lang$core$Json_Decode$andThen,
-												function (email) {
-													return A2(
-														_elm_lang$core$Json_Decode$andThen,
-														function (isSignedIn) {
-															return _elm_lang$core$Json_Decode$succeed(
-																{id: id, name: name, givenName: givenName, familyName: familyName, imageUrl: imageUrl, email: email, isSignedIn: isSignedIn});
-														},
-														A2(_elm_lang$core$Json_Decode$field, 'isSignedIn', _elm_lang$core$Json_Decode$bool));
-												},
-												A2(_elm_lang$core$Json_Decode$field, 'email', _elm_lang$core$Json_Decode$string));
-										},
-										A2(_elm_lang$core$Json_Decode$field, 'imageUrl', _elm_lang$core$Json_Decode$string));
-								},
-								A2(_elm_lang$core$Json_Decode$field, 'familyName', _elm_lang$core$Json_Decode$string));
-						},
-						A2(_elm_lang$core$Json_Decode$field, 'givenName', _elm_lang$core$Json_Decode$string));
-				},
-				A2(_elm_lang$core$Json_Decode$field, 'name', _elm_lang$core$Json_Decode$string));
-		},
-		A2(_elm_lang$core$Json_Decode$field, 'id', _elm_lang$core$Json_Decode$string)));
 var _user$project$Main$sendData = _elm_lang$core$Native_Platform.outgoingPort(
 	'sendData',
 	function (v) {
 		return v;
 	});
-var _user$project$Main$gapiLoad = _elm_lang$core$Native_Platform.outgoingPort(
-	'gapiLoad',
-	function (v) {
-		return {
-			components: v.components,
-			client_id: v.client_id,
-			discovery_docs: _elm_lang$core$Native_List.toArray(v.discovery_docs).map(
-				function (v) {
-					return v;
-				}),
-			scopes: v.scopes
-		};
-	});
-var _user$project$Main$initModel = {
-	ctor: '_Tuple2',
-	_0: {gapiUser: _user$project$Main$initGapiUser, text: 'elm_init'},
-	_1: _user$project$Main$gapiLoad(_user$project$Main$gapiConfig)
-};
-var _user$project$Main$call = _elm_lang$core$Native_Platform.outgoingPort(
-	'call',
-	function (v) {
-		return v;
-	});
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p0 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p0.ctor) {
+		var _p2 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p2.ctor) {
 			case 'ReceiveData':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{text: _p0._0}),
+						{text: _p2._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TextChanged':
 				return {
 					ctor: '_Tuple2',
 					_0: model,
-					_1: _user$project$Main$sendData(_p0._0)
+					_1: _user$project$Main$sendData(_p2._0)
 				};
 			case 'UpdateUser':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{gapiUser: _p0._0}),
+						{user: _p2._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'SignIn':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _user$project$Main$call('signIn')
-				};
+				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
 			default:
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _user$project$Main$call('signOut')
-				};
+				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signOut};
 		}
 	});
 var _user$project$Main$Model = F2(
 	function (a, b) {
-		return {gapiUser: a, text: b};
+		return {user: a, text: b};
 	});
-var _user$project$Main$GapiConfig = F4(
-	function (a, b, c, d) {
-		return {components: a, client_id: b, discovery_docs: c, scopes: d};
-	});
-var _user$project$Main$GapiUser = F7(
-	function (a, b, c, d, e, f, g) {
-		return {id: a, name: b, givenName: c, familyName: d, imageUrl: e, email: f, isSignedIn: g};
-	});
-var _user$project$Main$Success = function (a) {
-	return {ctor: 'Success', _0: a};
-};
-var _user$project$Main$Failure = function (a) {
-	return {ctor: 'Failure', _0: a};
-};
-var _user$project$Main$Loading = {ctor: 'Loading'};
-var _user$project$Main$NotAsked = {ctor: 'NotAsked'};
 var _user$project$Main$TextChanged = function (a) {
 	return {ctor: 'TextChanged', _0: a};
 };
@@ -8417,70 +8444,71 @@ var _user$project$Main$subscriptions = function (model) {
 			_0: _user$project$Main$receiveData(_user$project$Main$ReceiveData),
 			_1: {
 				ctor: '::',
-				_0: _user$project$Main$updateUser(_user$project$Main$UpdateUser),
+				_0: _user$project$Gapi$updateUser(
+					function (maybeProfile) {
+						var _p3 = maybeProfile;
+						if (_p3.ctor === 'Just') {
+							return _user$project$Main$UpdateUser(
+								_user$project$Gapi$SignedIn(_p3._0));
+						} else {
+							return _user$project$Main$UpdateUser(_user$project$Gapi$SignedOut);
+						}
+					}),
 				_1: {ctor: '[]'}
 			}
 		});
 };
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
-var _user$project$Main$authButton = function (_p1) {
-	var _p2 = _p1;
-	return _p2.isSignedIn ? A2(
-		_elm_lang$html$Html$button,
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$SignOut),
-			_1: {ctor: '[]'}
-		},
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('Sign Out'),
-			_1: {ctor: '[]'}
-		}) : A2(
-		_elm_lang$html$Html$button,
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$SignIn),
-			_1: {ctor: '[]'}
-		},
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('Sign In'),
-			_1: {ctor: '[]'}
-		});
+var _user$project$Main$authButton = function (user) {
+	var _p4 = user;
+	if (_p4.ctor === 'SignedIn') {
+		return A2(
+			_elm_lang$html$Html$button,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$SignOut),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('Sign Out'),
+				_1: {ctor: '[]'}
+			});
+	} else {
+		return A2(
+			_elm_lang$html$Html$button,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$SignIn),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('Sign In'),
+				_1: {ctor: '[]'}
+			});
+	}
 };
-var _user$project$Main$userInfo = function (gapiUser) {
+var _user$project$Main$userInfo = function (user) {
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
 			_0: A2(
-				_elm_lang$html$Html$div,
+				_elm_lang$html$Html$span,
 				{ctor: '[]'},
 				{
 					ctor: '::',
-					_0: _user$project$Main$authButton(gapiUser),
+					_0: _user$project$Main$authButton(user),
 					_1: {
 						ctor: '::',
-						_0: _elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(gapiUser)),
+						_0: _user$project$Main$displayUserProfile(user),
 						_1: {ctor: '[]'}
 					}
 				}),
-			_1: {
-				ctor: '::',
-				_0: gapiUser.isSignedIn ? A2(
-					_elm_lang$html$Html$img,
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$src(gapiUser.imageUrl),
-						_1: {ctor: '[]'}
-					},
-					{ctor: '[]'}) : _elm_lang$html$Html$text(''),
-				_1: {ctor: '[]'}
-			}
+			_1: {ctor: '[]'}
 		});
 };
 var _user$project$Main$view = function (model) {
@@ -8489,7 +8517,7 @@ var _user$project$Main$view = function (model) {
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$userInfo(model.gapiUser),
+			_0: _user$project$Main$userInfo(model.user),
 			_1: {
 				ctor: '::',
 				_0: A2(
