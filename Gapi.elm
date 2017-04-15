@@ -6,13 +6,11 @@ type User =
 
 type AuthCommand = SignIn | SignOut
 
-type alias Config = {
-    components: String,
+type alias Config a = {
     client_id: String,
-    discovery_docs: List String,
-    scopes: String,
     file_name: String,
-    folder_name: String
+    folder_name: String,
+    initData: a
 }
 
 type alias BasicProfile = {
@@ -36,5 +34,4 @@ signOut =
 port updateUser: (Maybe BasicProfile -> msg) -> Sub msg
 
 -- out
-port init: Config -> Cmd msg
 port call: String -> Cmd msg

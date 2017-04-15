@@ -1,13 +1,20 @@
 function elmGapi(elmApp) {
+  const COMPONENTS = 'auth2:client,drive-realtime,drive-share';
+  const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
+  const SCOPES = 
+        "https://www.googleapis.com/auth/drive.metadata.readonly " +
+        "https://www.googleapis.com/auth/drive.file"
+
+
   let file;
   let folder;
   let send;
   let notifyDone;
 
 
-  elmApp.ports.init.subscribe((gapiConfig) => {
+  elmApp.ports.gapiInit.subscribe((gapiConfig) => {
     console.log('gapiLoad', gapiConfig);
-    gapi.load(gapiConfig.components, () => initClient(gapiConfig));
+    gapi.load(COMPONENTS, () => initClient(gapiConfig));
   });
 
   elmApp.ports.call.subscribe((f) => {
@@ -17,7 +24,7 @@ function elmGapi(elmApp) {
           prompt: 'select_account'
         });
       case 'signOut':
-        return gapi.auth2.getAuthInstance().signOut();
+        gapi.auth2.getAuthInstance().signOut();
     }
   })
 
@@ -28,9 +35,9 @@ function elmGapi(elmApp) {
   function initClient(gapiConfig) {
     console.log('initClient');
     gapi.client.init({
-      discoveryDocs: gapiConfig.discovery_docs,
+      discoveryDocs: DISCOVERY_DOCS,
       clientId: gapiConfig.client_id,
-      scope: gapiConfig.scopes
+      scope: SCOPES
     }).then(function (result) {
       console.log('initClient', result)
       const auth = gapi.auth2.getAuthInstance();
@@ -44,19 +51,42 @@ function elmGapi(elmApp) {
       console.log(reason);
     });
 
+
     function signInChange(isSignedIn) {
       const userProfile = isSignedIn ? basicProfile() : null;
       elmApp.ports.updateUser.send(userProfile);
 
       if (isSignedIn) {
-        const currentUser = gapi.auth2.getAuthInstance().currentUser.get()
-        console.log(currentUser.getAuthResponse(true));
-        createAndLoadFile(gapiConfig.file_name, gapiConfig.folder_name, (fileId) => {
-          gapi.drive.realtime.load(fileId, onFileLoaded, onFileInitialize, (error) => {
-            console.log('gapi.drive.realtime.load error', error);
-          });
-        });
+        const user = gapi.auth2.getAuthInstance().currentUser.get();
+        const authResponse = user.getAuthResponse(true);
+        console.log('authResponse', authResponse);
+        gapi.auth.setToken(authResponse, (result) => console.log('setToken', result));
+        prepareRealTimeDoc();
       }
+    }
+
+    function prepareRealTimeDoc() {
+      // gapi.auth2.authorize({
+      //   client_id: gapiConfig.client_id,
+      //   scope: SCOPES,
+      //   immediate: true
+      // }, (result) => {
+        // console.log('gapi.auth.authorize result', result);
+        // if (!result.error) {
+          createAndLoadFile(gapiConfig.file_name, gapiConfig.folder_name, (fileId) => {
+            gapi.drive.realtime.load(
+              fileId, 
+              onFileLoaded, 
+              (m) => onFileInitialize(m, gapiConfig.initData), 
+              (error) => {
+                console.log('gapi.drive.realtime.load error', error);
+              }
+            );
+          });
+        // } else {
+          // console.log('gapi.auth.authorize error :(')
+        // }
+      // }
     }
   }
 
@@ -77,9 +107,11 @@ function elmGapi(elmApp) {
   // The first time a file is opened, it must be initialized with the
   // document structure. This function will add a collaborative string
   // to our model at the root.
-  function onFileInitialize(model) {
+  function onFileInitialize(model, initData) {
     console.log('onFileInitialize')
-    model.getRoot().set('model_json', model.createString());
+    const string = model.createString();
+    string.text = JSON.stringify(initData);
+    model.getRoot().set('model_json', string);
   }
 
   // After a file has been initialized and loaded, we can access the
@@ -90,13 +122,13 @@ function elmGapi(elmApp) {
     root.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED, onObjectChanged);
 
     const modelJson = root.get('model_json');
-    elmApp.ports.receiveData.send(modelJson.text);
-    elmApp.ports.sendData.subscribe((json) => modelJson.text = json);
+    elmApp.ports.receiveData.send(JSON.parse(modelJson.text));
+    elmApp.ports.sendData.subscribe((data) => modelJson.text = JSON.stringify(data));
   }
 
   function onObjectChanged(event) {
     console.log('onObjectChanged', event);
-    elmApp.ports.receiveData.send(event.target.text);
+    elmApp.ports.receiveData.send(JSON.parse(event.target.text));
   }
 
   // FILE CREATION / LOAD
@@ -106,7 +138,7 @@ function elmGapi(elmApp) {
     console.log('createAndLoadFile')
     gapi.client.drive.files.list({
       q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-      fields: 'files(id, name)',
+      fields: 'files(id, name, trashed)',
       spaces: 'drive'
     }).then(onFolderList);
 
@@ -120,7 +152,7 @@ function elmGapi(elmApp) {
 
       gapi.client.drive.files.list({
         q: `name = '${fileName}' and '${folder.id}' in parents and trashed = false `,
-        fields: 'files(id, name, parents)',
+        fields: 'files(id, name, parents, trashed)',
         spaces: 'drive'
       }).then(onFileList(folder.id));
     }

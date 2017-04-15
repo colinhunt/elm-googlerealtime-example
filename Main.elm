@@ -18,7 +18,7 @@ type alias Todo = {
     completed: Bool
 }
 
-type alias Data = List Todo
+type alias Data = { todos: List Todo, newTodoId: Int }
 
 type Msg =
     SignIn |
@@ -31,29 +31,25 @@ type Msg =
     DeleteTodo Int |
     Cancel
 
-gapiConfig : Gapi.Config
+gapiConfig : Gapi.Config Data
 gapiConfig = {
-    components = "auth:client,drive-realtime,drive-share",
     client_id = "349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com",
-    discovery_docs = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-    scopes = 
-        "https://www.googleapis.com/auth/drive.metadata.readonly " ++
-        "https://www.googleapis.com/auth/drive.file",
     file_name = "elm-realtime-example",
-    folder_name = "ElmRealtimeExample"
+    folder_name = "ElmRealtimeExample",
+    initData = Data [] 0
     }
 
 
 initModel: (Model, Cmd msg)
 initModel =
-    ({ user = Gapi.SignedOut, todos = [], newTodoText = "", newTodoId = 0 }, Gapi.init gapiConfig)
+    ({ user = Gapi.SignedOut, todos = [], newTodoText = "", newTodoId = 0 }, gapiInit gapiConfig)
 
 
 update: Msg -> Model -> (Model, Cmd msg)
 update msg model = 
     case Debug.log "msg" msg of
-        ReceiveData todos ->
-            ( { model | todos = todos }, Cmd.none )
+        ReceiveData data ->
+            ( { model | todos = data.todos, newTodoId = data.newTodoId }, Cmd.none )
 
         UpdateUser user ->
             ( { model | user = user }, Cmd.none )
@@ -68,16 +64,21 @@ update msg model =
             ( { model | newTodoText = text }, Cmd.none )
 
         NewTodo ->
-            ( addTodo model, Cmd.none )
+            persist (addTodo model)
 
         ToggleTodo id ->
-            ( toggleTodo model id, Cmd.none )
+            persist (toggleTodo model id)
 
         DeleteTodo id ->
-            ( deleteTodo model id, Cmd.none )
+            persist (deleteTodo model id)
 
         Cancel ->
             ( { model | newTodoText = "" }, Cmd.none )
+
+persist: Model -> (Model, Cmd msg)
+persist model =
+    ( model, sendData (Data model.todos model.newTodoId) )
+
 
 addTodo: Model -> Model
 addTodo model =
@@ -162,7 +163,9 @@ todo todo =
     ]
 
 port receiveData: (Data -> msg) -> Sub msg
+
 port sendData: Data -> Cmd msg
+port gapiInit: Gapi.Config Data -> Cmd msg
 
 
 subscriptions: Model -> Sub Msg
