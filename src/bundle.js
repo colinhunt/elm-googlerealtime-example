@@ -8306,8 +8306,8 @@ var _user$project$Gapi$updateUser = _elm_lang$core$Native_Platform.incomingPort(
 				_1: {ctor: '[]'}
 			}
 		}));
-var _user$project$Gapi$load = _elm_lang$core$Native_Platform.outgoingPort(
-	'load',
+var _user$project$Gapi$init = _elm_lang$core$Native_Platform.outgoingPort(
+	'init',
 	function (v) {
 		return {
 			components: v.components,
@@ -8316,7 +8316,9 @@ var _user$project$Gapi$load = _elm_lang$core$Native_Platform.outgoingPort(
 				function (v) {
 					return v;
 				}),
-			scopes: v.scopes
+			scopes: v.scopes,
+			file_name: v.file_name,
+			folder_name: v.folder_name
 		};
 	});
 var _user$project$Gapi$call = _elm_lang$core$Native_Platform.outgoingPort(
@@ -8326,9 +8328,9 @@ var _user$project$Gapi$call = _elm_lang$core$Native_Platform.outgoingPort(
 	});
 var _user$project$Gapi$signIn = _user$project$Gapi$call('signIn');
 var _user$project$Gapi$signOut = _user$project$Gapi$call('signOut');
-var _user$project$Gapi$Config = F4(
-	function (a, b, c, d) {
-		return {components: a, client_id: b, discovery_docs: c, scopes: d};
+var _user$project$Gapi$Config = F6(
+	function (a, b, c, d, e, f) {
+		return {components: a, client_id: b, discovery_docs: c, scopes: d, file_name: e, folder_name: f};
 	});
 var _user$project$Gapi$BasicProfile = F6(
 	function (a, b, c, d, e, f) {
@@ -8369,28 +8371,98 @@ var _user$project$Main$displayUserProfile = function (user) {
 		return _elm_lang$html$Html$text('Please sign in!');
 	}
 };
-var _user$project$Main$folder_name = 'Elm Gapi Example';
-var _user$project$Main$file_name = 'elm-gapi-example.json';
+var _user$project$Main$deleteTodo = F2(
+	function (model, id) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				todos: A2(
+					_elm_lang$core$List$filter,
+					function (t) {
+						return !_elm_lang$core$Native_Utils.eq(t.id, id);
+					},
+					model.todos)
+			});
+	});
 var _user$project$Main$gapiConfig = {
-	components: 'auth:client,drive-realtime,drive-share',
+	components: 'auth2:client,drive-realtime,drive-share',
 	client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com',
 	discovery_docs: {
 		ctor: '::',
 		_0: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
 		_1: {ctor: '[]'}
 	},
-	scopes: A2(_elm_lang$core$Basics_ops['++'], 'https://www.googleapis.com/auth/drive.metadata.readonly ', 'https://www.googleapis.com/auth/drive.file')
+	scopes: A2(_elm_lang$core$Basics_ops['++'], 'https://www.googleapis.com/auth/drive.metadata.readonly ', 'https://www.googleapis.com/auth/drive.file'),
+	file_name: 'elm-realtime-example',
+	folder_name: 'ElmRealtimeExample'
 };
 var _user$project$Main$initModel = {
 	ctor: '_Tuple2',
-	_0: {user: _user$project$Gapi$SignedOut, text: 'elm_init'},
-	_1: _user$project$Gapi$load(_user$project$Main$gapiConfig)
+	_0: {
+		user: _user$project$Gapi$SignedOut,
+		todos: {ctor: '[]'},
+		newTodoText: '',
+		newTodoId: 0
+	},
+	_1: _user$project$Gapi$init(_user$project$Main$gapiConfig)
 };
-var _user$project$Main$receiveData = _elm_lang$core$Native_Platform.incomingPort('receiveData', _elm_lang$core$Json_Decode$string);
+var _user$project$Main$receiveData = _elm_lang$core$Native_Platform.incomingPort(
+	'receiveData',
+	_elm_lang$core$Json_Decode$list(
+		A2(
+			_elm_lang$core$Json_Decode$andThen,
+			function (id) {
+				return A2(
+					_elm_lang$core$Json_Decode$andThen,
+					function (text) {
+						return A2(
+							_elm_lang$core$Json_Decode$andThen,
+							function (completed) {
+								return _elm_lang$core$Json_Decode$succeed(
+									{id: id, text: text, completed: completed});
+							},
+							A2(_elm_lang$core$Json_Decode$field, 'completed', _elm_lang$core$Json_Decode$bool));
+					},
+					A2(_elm_lang$core$Json_Decode$field, 'text', _elm_lang$core$Json_Decode$string));
+			},
+			A2(_elm_lang$core$Json_Decode$field, 'id', _elm_lang$core$Json_Decode$int))));
 var _user$project$Main$sendData = _elm_lang$core$Native_Platform.outgoingPort(
 	'sendData',
 	function (v) {
-		return v;
+		return _elm_lang$core$Native_List.toArray(v).map(
+			function (v) {
+				return {id: v.id, text: v.text, completed: v.completed};
+			});
+	});
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {user: a, newTodoText: b, newTodoId: c, todos: d};
+	});
+var _user$project$Main$Todo = F3(
+	function (a, b, c) {
+		return {id: a, text: b, completed: c};
+	});
+var _user$project$Main$addTodo = function (model) {
+	var todo = A3(_user$project$Main$Todo, model.newTodoId, model.newTodoText, false);
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			todos: {ctor: '::', _0: todo, _1: model.todos},
+			newTodoText: '',
+			newTodoId: model.newTodoId + 1
+		});
+};
+var _user$project$Main$toggleTodo = F2(
+	function (model, id) {
+		var newTodos = A2(
+			_elm_lang$core$List$map,
+			function (t) {
+				return _elm_lang$core$Native_Utils.eq(t.id, id) ? A3(_user$project$Main$Todo, id, t.text, !t.completed) : t;
+			},
+			model.todos);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{todos: newTodos});
 	});
 var _user$project$Main$update = F2(
 	function (msg, model) {
@@ -8401,14 +8473,8 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{text: _p2._0}),
+						{todos: _p2._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'TextChanged':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _user$project$Main$sendData(_p2._0)
 				};
 			case 'UpdateUser':
 				return {
@@ -8420,16 +8486,164 @@ var _user$project$Main$update = F2(
 				};
 			case 'SignIn':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
-			default:
+			case 'SignOut':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signOut};
+			case 'Input':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{newTodoText: _p2._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'NewTodo':
+				return {
+					ctor: '_Tuple2',
+					_0: _user$project$Main$addTodo(model),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'ToggleTodo':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$Main$toggleTodo, model, _p2._0),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'DeleteTodo':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$Main$deleteTodo, model, _p2._0),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{newTodoText: ''}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {user: a, text: b};
-	});
-var _user$project$Main$TextChanged = function (a) {
-	return {ctor: 'TextChanged', _0: a};
+var _user$project$Main$Cancel = {ctor: 'Cancel'};
+var _user$project$Main$DeleteTodo = function (a) {
+	return {ctor: 'DeleteTodo', _0: a};
+};
+var _user$project$Main$ToggleTodo = function (a) {
+	return {ctor: 'ToggleTodo', _0: a};
+};
+var _user$project$Main$todo = function (todo) {
+	var className = todo.completed ? 'completedTodo' : '';
+	return A2(
+		_elm_lang$html$Html$li,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$span,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class(className),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onClick(
+							_user$project$Main$ToggleTodo(todo.id)),
+						_1: {ctor: '[]'}
+					}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(todo.text),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onClick(
+							_user$project$Main$DeleteTodo(todo.id)),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('x'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			}
+		});
+};
+var _user$project$Main$NewTodo = {ctor: 'NewTodo'};
+var _user$project$Main$Input = function (a) {
+	return {ctor: 'Input', _0: a};
+};
+var _user$project$Main$todoForm = function (model) {
+	return A2(
+		_elm_lang$html$Html$form,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Events$onSubmit(_user$project$Main$NewTodo),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$input,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$type_('text'),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$placeholder('Add todo...'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onInput(_user$project$Main$Input),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$value(model.newTodoText),
+								_1: {ctor: '[]'}
+							}
+						}
+					}
+				},
+				{ctor: '[]'}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$type_('submit'),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('+'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$button,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$type_('button'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$Cancel),
+								_1: {ctor: '[]'}
+							}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('x'),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
+			}
+		});
 };
 var _user$project$Main$ReceiveData = function (a) {
 	return {ctor: 'ReceiveData', _0: a};
@@ -8535,28 +8749,20 @@ var _user$project$Main$view = function (model) {
 						{ctor: '[]'},
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html$text('Now that your application is running, simply type in either text box and see your changes instantly appear in the other one. Open this same document in a new tab to see it work across tabs.'),
+							_0: _elm_lang$html$Html$text('Now that your application is running, open this same document in a new tab or device to see syncing happen!.'),
 							_1: {ctor: '[]'}
 						}),
 					_1: {
 						ctor: '::',
-						_0: A2(
-							_elm_lang$html$Html$textarea,
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html_Attributes$id('text_area_1'),
-								_1: {
-									ctor: '::',
-									_0: _elm_lang$html$Html_Events$onInput(_user$project$Main$TextChanged),
-									_1: {
-										ctor: '::',
-										_0: _elm_lang$html$Html_Attributes$value(model.text),
-										_1: {ctor: '[]'}
-									}
-								}
-							},
-							{ctor: '[]'}),
-						_1: {ctor: '[]'}
+						_0: _user$project$Main$todoForm(model),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$ul,
+								{ctor: '[]'},
+								A2(_elm_lang$core$List$map, _user$project$Main$todo, model.todos)),
+							_1: {ctor: '[]'}
+						}
 					}
 				}
 			}

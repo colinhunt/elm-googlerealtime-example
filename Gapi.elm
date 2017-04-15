@@ -10,7 +10,9 @@ type alias Config = {
     components: String,
     client_id: String,
     discovery_docs: List String,
-    scopes: String
+    scopes: String,
+    file_name: String,
+    folder_name: String
 }
 
 type alias BasicProfile = {
@@ -19,12 +21,14 @@ type alias BasicProfile = {
     givenName: String,
     familyName: String,
     imageUrl: String,
-    email: String    
+    email: String
 }
 
+signIn: Cmd msg
 signIn =
     call "signIn"
 
+signOut : Cmd msg
 signOut =
     call "signOut"
 
@@ -32,5 +36,5 @@ signOut =
 port updateUser: (Maybe BasicProfile -> msg) -> Sub msg
 
 -- out
-port load: Config -> Cmd msg
+port init: Config -> Cmd msg
 port call: String -> Cmd msg
