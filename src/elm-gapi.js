@@ -66,27 +66,16 @@ function elmGapi(elmApp) {
     }
 
     function prepareRealTimeDoc() {
-      // gapi.auth2.authorize({
-      //   client_id: gapiConfig.client_id,
-      //   scope: SCOPES,
-      //   immediate: true
-      // }, (result) => {
-        // console.log('gapi.auth.authorize result', result);
-        // if (!result.error) {
-          createAndLoadFile(gapiConfig.file_name, gapiConfig.folder_name, (fileId) => {
-            gapi.drive.realtime.load(
-              fileId, 
-              onFileLoaded, 
-              (m) => onFileInitialize(m, gapiConfig.initData), 
-              (error) => {
-                console.log('gapi.drive.realtime.load error', error);
-              }
-            );
-          });
-        // } else {
-          // console.log('gapi.auth.authorize error :(')
-        // }
-      // }
+      createAndLoadFile(gapiConfig.file_name, gapiConfig.folder_name, (fileId) => {
+        gapi.drive.realtime.load(
+          fileId, 
+          onFileLoaded, 
+          (m) => onFileInitialize(m, gapiConfig.initData), 
+          (error) => {
+            console.log('gapi.drive.realtime.load error', error);
+          }
+        );
+      });
     }
   }
 
