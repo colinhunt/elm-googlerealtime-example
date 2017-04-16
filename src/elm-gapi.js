@@ -15,7 +15,7 @@ function elmGapi(elmApp) {
           prompt: 'select_account'
         });
       case 'signOut':
-        gapi.auth2.getAuthInstance().signOut();
+        return gapi.auth2.getAuthInstance().signOut();
     }
   })
 
@@ -62,8 +62,8 @@ function elmGapi(elmApp) {
   function realtimeMode(fileId, initData) {
     return realtimeLoad();
 
-    function realtimeLoad(setToken = false) {
-      if (setToken) setAuthToken();
+    function realtimeLoad() {
+      setAuthToken();
       gapi.drive.realtime.load(
         fileId, 
         onFileLoaded, 
@@ -102,7 +102,7 @@ function elmGapi(elmApp) {
     function onError(error) {
       if (error.type == gapi.drive.realtime.ErrorType
           .TOKEN_REFRESH_REQUIRED) {
-        realtimeLoad(true);
+        realtimeLoad();
       } else if (error.type == gapi.drive.realtime.ErrorType
           .CLIENT_ERROR) {
         alert('An Error happened: ' + error.message);
