@@ -11,13 +11,25 @@ function elmGapi(elmApp) {
   elmApp.ports.call.subscribe((f) => {
     switch (f) {
       case 'signIn':
-        return gapi.auth2.getAuthInstance().signIn({
+        gapi.auth2.getAuthInstance().signIn({
           prompt: 'select_account'
         });
       case 'signOut':
-        return gapi.auth2.getAuthInstance().signOut();
+        gapi.auth2.getAuthInstance().signOut();
     }
   })
+
+  function updateUser(userProfile) {
+    elmApp.ports.updateUser.send(userProfile);
+  }
+
+  function sendDataToElm(data) {
+    elmApp.ports.receiveData.send(data);
+  }
+
+  function subscribeToElmData(receiveElmData) {
+    elmApp.ports.sendData.subscribe(receiveElmData);
+  }
 
   /**
    *  Initializes the API client library and sets up sign-in state
@@ -47,7 +59,7 @@ function elmGapi(elmApp) {
 
     function signInChange(isSignedIn) {
       const userProfile = isSignedIn ? basicProfile() : null;
-      elmApp.ports.updateUser.send(userProfile);
+      updateUser(userProfile);
 
       if (isSignedIn) {
         createAndLoadFile(
@@ -90,13 +102,13 @@ function elmGapi(elmApp) {
       root.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED, onObjectChanged);
 
       const modelJson = root.get('model_json');
-      elmApp.ports.receiveData.send(JSON.parse(modelJson.text));
-      elmApp.ports.sendData.subscribe((data) => modelJson.text = JSON.stringify(data));
+      sendDataToElm(JSON.parse(modelJson.text));
+      subscribeToElmData((data) => modelJson.text = JSON.stringify(data));
     }
 
     function onObjectChanged(event) {
       console.log('onObjectChanged', event);
-      elmApp.ports.receiveData.send(JSON.parse(event.target.text));
+      sendDataToElm(JSON.parse(event.target.text));
     }
 
     function onError(error) {
