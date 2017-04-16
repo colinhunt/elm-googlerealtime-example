@@ -28,13 +28,13 @@ type alias Data =
 type Msg
     = SignIn
     | SignOut
-    | UpdateUser Gapi.User
     | ReceiveData Data
     | Input String
     | NewTodo
     | ToggleTodo Int
     | DeleteTodo Int
     | Cancel
+    | UpdateUser Gapi.User
 
 
 gapiConfig : Gapi.Config Data
@@ -230,15 +230,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ receiveData ReceiveData
-        , Gapi.updateUser
-            (\maybeProfile ->
-                case maybeProfile of
-                    Just profile ->
-                        UpdateUser (Gapi.SignedIn profile)
-
-                    Nothing ->
-                        UpdateUser Gapi.SignedOut
-            )
+        , Gapi.updateUserSub UpdateUser
         ]
 
 

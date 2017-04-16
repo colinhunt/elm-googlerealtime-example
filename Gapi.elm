@@ -6,11 +6,6 @@ type User
     | SignedIn BasicProfile
 
 
-type AuthCommand
-    = SignIn
-    | SignOut
-
-
 type alias Config a =
     { client_id : String
     , file_name : String
@@ -37,6 +32,19 @@ signIn =
 signOut : Cmd msg
 signOut =
     call "signOut"
+
+
+updateUserSub : (User -> msg) -> Sub msg
+updateUserSub msgCtor =
+    updateUser
+        (\maybeProfile ->
+            case maybeProfile of
+                Just profile ->
+                    msgCtor (SignedIn profile)
+
+                Nothing ->
+                    msgCtor SignedOut
+        )
 
 
 

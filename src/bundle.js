@@ -8325,8 +8325,18 @@ var _user$project$Gapi$SignedIn = function (a) {
 	return {ctor: 'SignedIn', _0: a};
 };
 var _user$project$Gapi$SignedOut = {ctor: 'SignedOut'};
-var _user$project$Gapi$SignOut = {ctor: 'SignOut'};
-var _user$project$Gapi$SignIn = {ctor: 'SignIn'};
+var _user$project$Gapi$updateUserSub = function (msgCtor) {
+	return _user$project$Gapi$updateUser(
+		function (maybeProfile) {
+			var _p0 = maybeProfile;
+			if (_p0.ctor === 'Just') {
+				return msgCtor(
+					_user$project$Gapi$SignedIn(_p0._0));
+			} else {
+				return msgCtor(_user$project$Gapi$SignedOut);
+			}
+		});
+};
 
 var _user$project$Main$displayUserProfile = function (user) {
 	var _p0 = A2(_elm_lang$core$Debug$log, 'displayUserProfile', user);
@@ -8543,6 +8553,9 @@ var _user$project$Main$update = F2(
 				};
 		}
 	});
+var _user$project$Main$UpdateUser = function (a) {
+	return {ctor: 'UpdateUser', _0: a};
+};
 var _user$project$Main$Cancel = {ctor: 'Cancel'};
 var _user$project$Main$DeleteTodo = function (a) {
 	return {ctor: 'DeleteTodo', _0: a};
@@ -8667,9 +8680,6 @@ var _user$project$Main$todoForm = function (model) {
 var _user$project$Main$ReceiveData = function (a) {
 	return {ctor: 'ReceiveData', _0: a};
 };
-var _user$project$Main$UpdateUser = function (a) {
-	return {ctor: 'UpdateUser', _0: a};
-};
 var _user$project$Main$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$batch(
 		{
@@ -8677,16 +8687,7 @@ var _user$project$Main$subscriptions = function (model) {
 			_0: _user$project$Main$receiveData(_user$project$Main$ReceiveData),
 			_1: {
 				ctor: '::',
-				_0: _user$project$Gapi$updateUser(
-					function (maybeProfile) {
-						var _p4 = maybeProfile;
-						if (_p4.ctor === 'Just') {
-							return _user$project$Main$UpdateUser(
-								_user$project$Gapi$SignedIn(_p4._0));
-						} else {
-							return _user$project$Main$UpdateUser(_user$project$Gapi$SignedOut);
-						}
-					}),
+				_0: _user$project$Gapi$updateUserSub(_user$project$Main$UpdateUser),
 				_1: {ctor: '[]'}
 			}
 		});
@@ -8694,8 +8695,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p5 = user;
-	if (_p5.ctor === 'SignedIn') {
+	var _p4 = user;
+	if (_p4.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -8768,7 +8769,7 @@ var _user$project$Main$view = function (model) {
 						{ctor: '[]'},
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html$text('Now that your application is running, open this same document in a new tab or device to see syncing happen!.'),
+							_0: _elm_lang$html$Html$text('Now that your application is running, open this same document in a new tab or device to see syncing happen!'),
 							_1: {ctor: '[]'}
 						}),
 					_1: {

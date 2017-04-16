@@ -6,16 +6,7 @@ function elmGapi(elmApp) {
         "https://www.googleapis.com/auth/drive.file"
 
 
-  let file;
-  let folder;
-  let send;
-  let notifyDone;
-
-
-  elmApp.ports.gapiInit.subscribe((gapiConfig) => {
-    console.log('gapiLoad', gapiConfig);
-    gapi.load(COMPONENTS, () => initClient(gapiConfig));
-  });
+  elmApp.ports.gapiInit.subscribe(initClient);
 
   elmApp.ports.call.subscribe((f) => {
     switch (f) {
@@ -33,50 +24,103 @@ function elmGapi(elmApp) {
    *  listeners.
    */
   function initClient(gapiConfig) {
-    console.log('initClient');
-    gapi.client.init({
-      discoveryDocs: DISCOVERY_DOCS,
-      clientId: gapiConfig.client_id,
-      scope: SCOPES
-    }).then(function (result) {
-      console.log('initClient', result)
-      const auth = gapi.auth2.getAuthInstance();
-      // Listen for sign-in state changes.
-      auth.isSignedIn.listen(signInChange);
+    console.log('initClient', gapiConfig);
+    gapi.load(COMPONENTS, () => {
+      console.log('gapi.load');
+      gapi.client.init({
+        discoveryDocs: DISCOVERY_DOCS,
+        clientId: gapiConfig.client_id,
+        scope: SCOPES
+      }).then(function (result) {
+        console.log('gapi.client.init', result)
+        const auth = gapi.auth2.getAuthInstance();
+        // Listen for sign-in state changes.
+        auth.isSignedIn.listen(signInChange);
 
-      // Handle the initial sign-in state.
-      signInChange(auth.isSignedIn.get());
-    }, function (reason) {
-      console.log('failure');
-      console.log(reason);
+        // Handle the initial sign-in state.
+        signInChange(auth.isSignedIn.get());
+      }, function (reason) {
+        console.log('failure');
+        console.log(reason);
+      });
     });
-
 
     function signInChange(isSignedIn) {
       const userProfile = isSignedIn ? basicProfile() : null;
       elmApp.ports.updateUser.send(userProfile);
 
       if (isSignedIn) {
-        const user = gapi.auth2.getAuthInstance().currentUser.get();
-        const authResponse = user.getAuthResponse(true);
-        console.log('authResponse', authResponse);
-        gapi.auth.setToken(authResponse, (result) => console.log('setToken', result));
-        prepareRealTimeDoc();
+        createAndLoadFile(
+          gapiConfig.file_name, 
+          gapiConfig.folder_name, 
+          (fileId) => realtimeMode(fileId, gapiConfig.initData)
+        );
       }
     }
+  }
 
-    function prepareRealTimeDoc() {
-      createAndLoadFile(gapiConfig.file_name, gapiConfig.folder_name, (fileId) => {
-        gapi.drive.realtime.load(
-          fileId, 
-          onFileLoaded, 
-          (m) => onFileInitialize(m, gapiConfig.initData), 
-          (error) => {
-            console.log('gapi.drive.realtime.load error', error);
-          }
-        );
-      });
+  function realtimeMode(fileId, initData) {
+    return realtimeLoad();
+
+    function realtimeLoad(setToken = false) {
+      if (setToken) setAuthToken();
+      gapi.drive.realtime.load(
+        fileId, 
+        onFileLoaded, 
+        onFileInitialize, 
+        onError
+      );      
     }
+
+    // The first time a file is opened, it must be initialized with the
+    // document structure. This function will add a collaborative string
+    // to our model at the root.
+    function onFileInitialize(model) {
+      console.log('onFileInitialize')
+      const string = model.createString();
+      string.text = JSON.stringify(initData);
+      model.getRoot().set('model_json', string);
+    }
+
+    // After a file has been initialized and loaded, we can access the
+    // document. We will wire up the data model to the UI.
+    function onFileLoaded(doc) {
+      console.log('onFileLoaded')
+      const root = doc.getModel().getRoot();
+      root.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED, onObjectChanged);
+
+      const modelJson = root.get('model_json');
+      elmApp.ports.receiveData.send(JSON.parse(modelJson.text));
+      elmApp.ports.sendData.subscribe((data) => modelJson.text = JSON.stringify(data));
+    }
+
+    function onObjectChanged(event) {
+      console.log('onObjectChanged', event);
+      elmApp.ports.receiveData.send(JSON.parse(event.target.text));
+    }
+
+    function onError(error) {
+      if (error.type == gapi.drive.realtime.ErrorType
+          .TOKEN_REFRESH_REQUIRED) {
+        realtimeLoad(true);
+      } else if (error.type == gapi.drive.realtime.ErrorType
+          .CLIENT_ERROR) {
+        alert('An Error happened: ' + error.message);
+      } else if (error.type == gapi.drive.realtime.ErrorType.NOT_FOUND) {
+        alert('The file was not found. It does not exist or you do not have ' +
+          'read access to the file.');
+      } else if (error.type == gapi.drive.realtime.ErrorType.FORBIDDEN) {
+        alert('You do not have access to this file. Try having the owner share' +
+          'it with you from Google Drive.');
+      }
+    }
+  }
+
+  function setAuthToken(refresh = false) {
+    const user = gapi.auth2.getAuthInstance().currentUser.get();
+    const authResponse = user.getAuthResponse(true);
+    console.log('authResponse', authResponse);
+    gapi.auth.setToken(authResponse);      
   }
 
   function basicProfile() {
@@ -93,32 +137,7 @@ function elmGapi(elmApp) {
     }
   }
 
-  // The first time a file is opened, it must be initialized with the
-  // document structure. This function will add a collaborative string
-  // to our model at the root.
-  function onFileInitialize(model, initData) {
-    console.log('onFileInitialize')
-    const string = model.createString();
-    string.text = JSON.stringify(initData);
-    model.getRoot().set('model_json', string);
-  }
 
-  // After a file has been initialized and loaded, we can access the
-  // document. We will wire up the data model to the UI.
-  function onFileLoaded(doc) {
-    console.log('onFileLoaded')
-    const root = doc.getModel().getRoot();
-    root.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED, onObjectChanged);
-
-    const modelJson = root.get('model_json');
-    elmApp.ports.receiveData.send(JSON.parse(modelJson.text));
-    elmApp.ports.sendData.subscribe((data) => modelJson.text = JSON.stringify(data));
-  }
-
-  function onObjectChanged(event) {
-    console.log('onObjectChanged', event);
-    elmApp.ports.receiveData.send(JSON.parse(event.target.text));
-  }
 
   // FILE CREATION / LOAD
 
@@ -133,7 +152,7 @@ function elmGapi(elmApp) {
 
     function onFolderList(result) {
       console.log('onFolderList', result)
-      folder = result.result.files[0]
+      const folder = result.result.files[0];
       if (!folder) {
         return createFolder();
       }
@@ -163,7 +182,7 @@ function elmGapi(elmApp) {
     function onFileList(folderId) {
       function _onFileList(result) {
         console.log('onFileList', result)
-        file = result.result.files[0]
+        const file = result.result.files[0]
         if (!file) {
           return createFile(folderId);
         }
