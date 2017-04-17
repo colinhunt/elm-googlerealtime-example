@@ -8366,19 +8366,33 @@ var _user$project$Main$displayUserProfile = function (user) {
 		return _elm_lang$html$Html$text('Please sign in!');
 	}
 };
-var _user$project$Main$deleteTodo = F2(
-	function (model, id) {
+var _user$project$Main$updateTodos = F2(
+	function (_p2, todos) {
+		var _p3 = _p2;
 		return _elm_lang$core$Native_Utils.update(
-			model,
+			_p3,
 			{
-				todos: A2(
-					_elm_lang$core$List$filter,
-					function (t) {
-						return !_elm_lang$core$Native_Utils.eq(t.id, id);
-					},
-					model.todos)
+				data: _elm_lang$core$Native_Utils.update(
+					_p3.data,
+					{todos: todos})
 			});
 	});
+var _user$project$Main$deleteTodo = F2(
+	function (_p4, id) {
+		var _p5 = _p4;
+		return A2(
+			_user$project$Main$updateTodos,
+			_p5,
+			A2(
+				_elm_lang$core$List$filter,
+				function (t) {
+					return !_elm_lang$core$Native_Utils.eq(t.id, id);
+				},
+				_p5.data.todos));
+	});
+var _user$project$Main$gapiConfig = function (data) {
+	return {client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com', file_name: 'elm-realtime-example', folder_name: 'ElmRealtimeExample', initData: data};
+};
 var _user$project$Main$receiveData = _elm_lang$core$Native_Platform.incomingPort(
 	'receiveData',
 	A2(
@@ -8424,6 +8438,14 @@ var _user$project$Main$sendData = _elm_lang$core$Native_Platform.outgoingPort(
 			newTodoId: v.newTodoId
 		};
 	});
+var _user$project$Main$persist = function (_p6) {
+	var _p7 = _p6;
+	return {
+		ctor: '_Tuple2',
+		_0: _p7,
+		_1: _user$project$Main$sendData(_p7.data)
+	};
+};
 var _user$project$Main$gapiInit = _elm_lang$core$Native_Platform.outgoingPort(
 	'gapiInit',
 	function (v) {
@@ -8440,78 +8462,70 @@ var _user$project$Main$gapiInit = _elm_lang$core$Native_Platform.outgoingPort(
 			}
 		};
 	});
-var _user$project$Main$Model = F4(
-	function (a, b, c, d) {
-		return {user: a, newTodoText: b, newTodoId: c, todos: d};
-	});
-var _user$project$Main$Todo = F3(
+var _user$project$Main$Model = F3(
 	function (a, b, c) {
-		return {id: a, text: b, completed: c};
-	});
-var _user$project$Main$addTodo = function (model) {
-	var todo = A3(_user$project$Main$Todo, model.newTodoId, model.newTodoText, false);
-	return _elm_lang$core$Native_Utils.update(
-		model,
-		{
-			todos: {ctor: '::', _0: todo, _1: model.todos},
-			newTodoText: '',
-			newTodoId: model.newTodoId + 1
-		});
-};
-var _user$project$Main$toggleTodo = F2(
-	function (model, id) {
-		var newTodos = A2(
-			_elm_lang$core$List$map,
-			function (t) {
-				return _elm_lang$core$Native_Utils.eq(t.id, id) ? A3(_user$project$Main$Todo, id, t.text, !t.completed) : t;
-			},
-			model.todos);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{todos: newTodos});
+		return {user: a, newTodoText: b, data: c};
 	});
 var _user$project$Main$Data = F2(
 	function (a, b) {
 		return {todos: a, newTodoId: b};
 	});
-var _user$project$Main$gapiConfig = {
-	client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com',
-	file_name: 'elm-realtime-example',
-	folder_name: 'ElmRealtimeExample',
-	initData: A2(
+var _user$project$Main$initModel = function () {
+	var data = A2(
 		_user$project$Main$Data,
 		{ctor: '[]'},
-		0)
-};
-var _user$project$Main$initModel = {
-	ctor: '_Tuple2',
-	_0: {
-		user: _user$project$Gapi$SignedOut,
-		todos: {ctor: '[]'},
-		newTodoText: '',
-		newTodoId: 0
-	},
-	_1: _user$project$Main$gapiInit(_user$project$Main$gapiConfig)
-};
-var _user$project$Main$persist = function (model) {
+		0);
 	return {
 		ctor: '_Tuple2',
-		_0: model,
-		_1: _user$project$Main$sendData(
-			A2(_user$project$Main$Data, model.todos, model.newTodoId))
+		_0: {user: _user$project$Gapi$SignedOut, newTodoText: '', data: data},
+		_1: _user$project$Main$gapiInit(
+			_user$project$Main$gapiConfig(data))
 	};
+}();
+var _user$project$Main$Todo = F3(
+	function (a, b, c) {
+		return {id: a, text: b, completed: c};
+	});
+var _user$project$Main$addTodo = function (_p8) {
+	var _p9 = _p8;
+	var _p11 = _p9;
+	var _p10 = _p9.data;
+	var todo = A3(_user$project$Main$Todo, _p10.newTodoId, _p11.newTodoText, false);
+	return _elm_lang$core$Native_Utils.update(
+		_p11,
+		{
+			newTodoText: '',
+			data: _elm_lang$core$Native_Utils.update(
+				_p10,
+				{
+					newTodoId: _p10.newTodoId + 1,
+					todos: {ctor: '::', _0: todo, _1: _p10.todos}
+				})
+		});
 };
+var _user$project$Main$toggleTodo = F2(
+	function (_p12, id) {
+		var _p13 = _p12;
+		return A2(
+			_user$project$Main$updateTodos,
+			_p13,
+			A2(
+				_elm_lang$core$List$map,
+				function (t) {
+					return _elm_lang$core$Native_Utils.eq(t.id, id) ? A3(_user$project$Main$Todo, id, t.text, !t.completed) : t;
+				},
+				_p13.data.todos));
+	});
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p2 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p2.ctor) {
+		var _p14 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p14.ctor) {
 			case 'ReceiveData':
-				var _p3 = _p2._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{todos: _p3.todos, newTodoId: _p3.newTodoId}),
+						{data: _p14._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'UpdateUser':
@@ -8519,7 +8533,7 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{user: _p2._0}),
+						{user: _p14._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'SignIn':
@@ -8531,7 +8545,7 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{newTodoText: _p2._0}),
+						{newTodoText: _p14._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'NewTodo':
@@ -8539,10 +8553,10 @@ var _user$project$Main$update = F2(
 					_user$project$Main$addTodo(model));
 			case 'ToggleTodo':
 				return _user$project$Main$persist(
-					A2(_user$project$Main$toggleTodo, model, _p2._0));
+					A2(_user$project$Main$toggleTodo, model, _p14._0));
 			case 'DeleteTodo':
 				return _user$project$Main$persist(
-					A2(_user$project$Main$deleteTodo, model, _p2._0));
+					A2(_user$project$Main$deleteTodo, model, _p14._0));
 			default:
 				return {
 					ctor: '_Tuple2',
@@ -8610,7 +8624,7 @@ var _user$project$Main$NewTodo = {ctor: 'NewTodo'};
 var _user$project$Main$Input = function (a) {
 	return {ctor: 'Input', _0: a};
 };
-var _user$project$Main$todoForm = function (model) {
+var _user$project$Main$todoForm = function (newTodoText) {
 	return A2(
 		_elm_lang$html$Html$form,
 		{
@@ -8633,7 +8647,7 @@ var _user$project$Main$todoForm = function (model) {
 							_0: _elm_lang$html$Html_Events$onInput(_user$project$Main$Input),
 							_1: {
 								ctor: '::',
-								_0: _elm_lang$html$Html_Attributes$value(model.newTodoText),
+								_0: _elm_lang$html$Html_Attributes$value(newTodoText),
 								_1: {ctor: '[]'}
 							}
 						}
@@ -8695,8 +8709,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p4 = user;
-	if (_p4.ctor === 'SignedIn') {
+	var _p15 = user;
+	if (_p15.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -8745,13 +8759,14 @@ var _user$project$Main$userInfo = function (user) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$Main$view = function (model) {
+var _user$project$Main$view = function (_p16) {
+	var _p17 = _p16;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$userInfo(model.user),
+			_0: _user$project$Main$userInfo(_p17.user),
 			_1: {
 				ctor: '::',
 				_0: A2(
@@ -8774,13 +8789,13 @@ var _user$project$Main$view = function (model) {
 						}),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Main$todoForm(model),
+						_0: _user$project$Main$todoForm(_p17.newTodoText),
 						_1: {
 							ctor: '::',
 							_0: A2(
 								_elm_lang$html$Html$ul,
 								{ctor: '[]'},
-								A2(_elm_lang$core$List$map, _user$project$Main$todo, model.todos)),
+								A2(_elm_lang$core$List$map, _user$project$Main$todo, _p17.data.todos)),
 							_1: {ctor: '[]'}
 						}
 					}

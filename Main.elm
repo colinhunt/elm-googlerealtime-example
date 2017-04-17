@@ -9,8 +9,13 @@ import Gapi
 type alias Model =
     { user : Gapi.User
     , newTodoText : String
+    , data : Data
+    }
+
+
+type alias Data =
+    { todos : List Todo
     , newTodoId : Int
-    , todos : List Todo
     }
 
 
@@ -19,10 +24,6 @@ type alias Todo =
     , text : String
     , completed : Bool
     }
-
-
-type alias Data =
-    { todos : List Todo, newTodoId : Int }
 
 
 type Msg
@@ -37,37 +38,35 @@ type Msg
     | UpdateUser Gapi.User
 
 
-gapiConfig : Gapi.Config Data
-gapiConfig =
+gapiConfig : Data -> Gapi.Config Data
+gapiConfig data =
     { client_id =
         "349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com"
     , file_name = "elm-realtime-example"
     , folder_name = "ElmRealtimeExample"
-    , initData = Data [] 0
+    , initData = data
     }
 
 
 initModel : ( Model, Cmd msg )
 initModel =
-    ( { user = Gapi.SignedOut
-      , todos = []
-      , newTodoText = ""
-      , newTodoId = 0
-      }
-    , gapiInit gapiConfig
-    )
+    let
+        data =
+            Data [] 0
+    in
+        ( { user = Gapi.SignedOut
+          , newTodoText = ""
+          , data = data
+          }
+        , gapiInit (gapiConfig data)
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case Debug.log "msg" msg of
         ReceiveData data ->
-            ( { model
-                | todos = data.todos
-                , newTodoId = data.newTodoId
-              }
-            , Cmd.none
-            )
+            ( { model | data = data }, Cmd.none )
 
         UpdateUser user ->
             ( { model | user = user }, Cmd.none )
@@ -95,52 +94,57 @@ update msg model =
 
 
 persist : Model -> ( Model, Cmd msg )
-persist model =
-    ( model, sendData (Data model.todos model.newTodoId) )
+persist ({ data } as model) =
+    ( model, sendData data )
 
 
 addTodo : Model -> Model
-addTodo model =
+addTodo ({ data } as model) =
     let
         todo =
-            Todo model.newTodoId model.newTodoText False
+            Todo data.newTodoId model.newTodoText False
     in
         { model
-            | todos = todo :: model.todos
-            , newTodoText = ""
-            , newTodoId = model.newTodoId + 1
+            | newTodoText = ""
+            , data =
+                { data
+                    | newTodoId = data.newTodoId + 1
+                    , todos = todo :: data.todos
+                }
         }
 
 
 toggleTodo : Model -> Int -> Model
-toggleTodo model id =
-    let
-        newTodos =
-            List.map
-                (\t ->
-                    if t.id == id then
-                        Todo id t.text (not t.completed)
-                    else
-                        t
-                )
-                model.todos
-    in
-        { model | todos = newTodos }
+toggleTodo ({ data } as model) id =
+    updateTodos model <|
+        List.map
+            (\t ->
+                if t.id == id then
+                    Todo id t.text (not t.completed)
+                else
+                    t
+            )
+            data.todos
 
 
 deleteTodo : Model -> Int -> Model
-deleteTodo model id =
-    { model | todos = List.filter (\t -> t.id /= id) model.todos }
+deleteTodo ({ data } as model) id =
+    updateTodos model <| List.filter (\t -> t.id /= id) data.todos
+
+
+updateTodos : Model -> List Todo -> Model
+updateTodos ({ data } as model) todos =
+    { model | data = { data | todos = todos } }
 
 
 view : Model -> Html Msg
-view model =
+view { user, newTodoText, data } =
     div []
-        [ userInfo model.user
+        [ userInfo user
         , h1 [] [ text "Realtime Collaboration Quickstart" ]
         , p [] [ text "Now that your application is running, open this same document in a new tab or device to see syncing happen!" ]
-        , todoForm model
-        , ul [] <| List.map todo <| model.todos
+        , todoForm newTodoText
+        , ul [] <| List.map todo <| data.todos
         ]
 
 
@@ -177,14 +181,14 @@ authButton user =
             button [ onClick SignIn ] [ text "Sign In" ]
 
 
-todoForm : Model -> Html Msg
-todoForm model =
+todoForm : String -> Html Msg
+todoForm newTodoText =
     Html.form [ onSubmit NewTodo ]
         [ input
             [ type_ "text"
             , placeholder "Add todo..."
             , onInput Input
-            , value model.newTodoText
+            , value newTodoText
             ]
             []
         , button [ type_ "submit" ] [ text "+" ]

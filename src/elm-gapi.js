@@ -112,7 +112,7 @@ function elmGapi(elmApp) {
     function onError(error) {
       if (error.type == gapi.drive.realtime.ErrorType
           .TOKEN_REFRESH_REQUIRED) {
-        realtimeLoad();
+        return realtimeLoad();
       } else if (error.type == gapi.drive.realtime.ErrorType
           .CLIENT_ERROR) {
         alert('An Error happened: ' + error.message);
@@ -126,11 +126,17 @@ function elmGapi(elmApp) {
     }
   }
 
-  function setAuthToken(refresh = false) {
+  // To avoid 'token_refresh_required' errors from gapi.drive.realtime, 
+  // we have to supply gapi.auth with our authentication token from gapi.auth2
+  function setAuthToken() {
     const user = gapi.auth2.getAuthInstance().currentUser.get();
     const authResponse = user.getAuthResponse(true);
     console.log('authResponse', authResponse);
-    gapi.auth.setToken(authResponse);      
+    gapi.auth.setToken(authResponse);
+    // refresh before expirery
+    setTimeout(() => {
+      return setAuthToken();
+    }, authResponse.expires_in * 0.9 * 1000 )
   }
 
   function basicProfile() {
