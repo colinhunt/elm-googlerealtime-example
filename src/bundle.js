@@ -8792,6 +8792,10 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 	{init: _user$project$Main$initModel, view: _user$project$Main$view, update: _user$project$Main$update, subscriptions: _user$project$Main$subscriptions})();
 
 var Elm = {};
+Elm['Gapi'] = Elm['Gapi'] || {};
+if (typeof _user$project$Gapi$main !== 'undefined') {
+    _user$project$Gapi$main(Elm['Gapi'], 'Gapi', undefined);
+}
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
     _user$project$Main$main(Elm['Main'], 'Main', undefined);

@@ -89,9 +89,7 @@ function elmGapi(elmApp) {
     // to our model at the root.
     function onFileInitialize(model) {
       console.log('onFileInitialize')
-      const string = model.createString();
-      string.text = JSON.stringify(initData);
-      model.getRoot().set('model_json', string);
+      model.getRoot().set('app_data', initData);
     }
 
     // After a file has been initialized and loaded, we can access the
@@ -99,16 +97,16 @@ function elmGapi(elmApp) {
     function onFileLoaded(doc) {
       console.log('onFileLoaded')
       const root = doc.getModel().getRoot();
-      root.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED, onObjectChanged);
+      root.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onDataChanged);
 
-      const modelJson = root.get('model_json');
-      sendDataToElm(JSON.parse(modelJson.text));
-      subscribeToElmData((data) => modelJson.text = JSON.stringify(data));
+      const data = root.get('app_data');
+      sendDataToElm(data);
+      subscribeToElmData((data) => root.set('app_data', data));
     }
 
-    function onObjectChanged(event) {
-      console.log('onObjectChanged', event);
-      sendDataToElm(JSON.parse(event.target.text));
+    function onDataChanged(event) {
+      console.log('onDataChanged', event);
+      sendDataToElm(event.newValue);
     }
 
     function onError(error) {
