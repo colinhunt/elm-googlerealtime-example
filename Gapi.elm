@@ -35,15 +35,15 @@ signOut =
 
 
 updateUserSub : (User -> msg) -> Sub msg
-updateUserSub msgCtor =
+updateUserSub toMsg =
     updateUser
         (\maybeProfile ->
             case maybeProfile of
                 Just profile ->
-                    msgCtor (SignedIn profile)
+                    toMsg (SignedIn profile)
 
                 Nothing ->
-                    msgCtor SignedOut
+                    toMsg SignedOut
         )
 
 
