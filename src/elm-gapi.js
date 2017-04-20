@@ -23,7 +23,7 @@ function elmGapi(elmApp) {
     elmApp.ports.updateUser.send(userProfile);
   }
 
-  function sendDataToElm(data) {
+  function sendDataToElm(data, onError) {
     elmApp.ports.receiveData.send(data);
   }
 
@@ -72,6 +72,12 @@ function elmGapi(elmApp) {
   }
 
   function realtimeMode(fileId, initData) {
+
+    function key(version) {
+      const key = 'app_data';
+      return key + version;
+    }
+
     return realtimeLoad();
 
     function realtimeLoad() {
@@ -89,19 +95,47 @@ function elmGapi(elmApp) {
     // to our model at the root.
     function onFileInitialize(model) {
       console.log('onFileInitialize')
-      model.getRoot().set('app_data', initData);
+      const map = model.collaborativeMap();
+      map.set('app_data', initData);
+      model.getRoot().set(key(0), map);
+    }
+
+    function getSetMap(model) {
+      console.log('getSetMap')
+      const attempts = 1000;
+      const root = model.getRoot();
+      for (let i = 0; i < attempts; i++) {
+        if (!root.has(key(i))) {
+          const map = model.createMap();
+          map.set('app_data', initData);
+          root.set(key(i), map);
+          console.log('Created new data at key', key(i));
+        }          
+        const map = root.get(key(i));
+        const data = map.get('app_data');
+        try {
+          sendDataToElm(data);
+        } catch (e) {
+          if (e.message.includes('Trying to send an unexpected type of value through port')) {
+            console.log('Data mismatch error, retry')
+            continue;
+          }
+          console.log('Unrecoverable data error.')
+          throw e;  // unrecoverable so re-throw
+        }
+        // success
+        console.log('Success! Found data at key', key(i))
+        return map;
+      }
     }
 
     // After a file has been initialized and loaded, we can access the
     // document. We will wire up the data model to the UI.
     function onFileLoaded(doc) {
       console.log('onFileLoaded')
-      const root = doc.getModel().getRoot();
-      root.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onDataChanged);
-
-      const data = root.get('app_data');
-      sendDataToElm(data);
-      subscribeToElmData((data) => root.set('app_data', data));
+      const map = getSetMap(doc.getModel());
+      map.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onDataChanged);
+      subscribeToElmData((data) => map.set('app_data', data));
     }
 
     function onDataChanged(event) {

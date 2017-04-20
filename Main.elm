@@ -12,12 +12,14 @@ import Todos
 
 type alias Model =
     { user : Gapi.User
-    , data : Data
+    , todosState : Todos.State
     }
 
 
 type alias Data =
-    { todosState : Todos.State }
+    { todos : List Todos.Todo
+    , newTodoId : Int
+    }
 
 
 type Msg
@@ -35,23 +37,23 @@ type Msg
 initModel : ( Model, Cmd msg )
 initModel =
     let
-        data =
-            Data Todos.initState
+        todosState =
+            Todos.initState
     in
         ( { user = Gapi.SignedOut
-          , data = data
+          , todosState = todosState
           }
-        , gapiInit (gapiConfig data)
+        , gapiInit <| gapiConfig todosState
         )
 
 
-gapiConfig : Data -> Gapi.Config Data
-gapiConfig data =
+gapiConfig : { c | newTodoId : Int, todos : List Todos.Todo } -> Gapi.Config Data
+gapiConfig { todos, newTodoId } =
     { client_id =
         "349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com"
     , file_name = "elm-realtime-example"
     , folder_name = "ElmRealtimeExample"
-    , initData = data
+    , initData = Data todos newTodoId
     }
 
 
@@ -63,7 +65,7 @@ update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case Debug.log "msg" msg of
         ReceiveData data ->
-            ( { model | data = data }, Cmd.none )
+            receiveDataHelper model model.todosState data ! []
 
         UpdateUser user ->
             ( { model | user = user }, Cmd.none )
@@ -75,17 +77,21 @@ update msg model =
             ( model, Gapi.signOut )
 
         TodosMsg todosMsg ->
-            updateTodos model <| Todos.update todosMsg model.data.todosState
+            persist
+                { model | todosState = Todos.update todosMsg model.todosState }
 
 
-updateTodos : Model -> Todos.State -> ( Model, Cmd msg )
-updateTodos ({ data } as model) todosState =
-    persist { model | data = { data | todosState = todosState } }
+receiveDataHelper : Model -> Todos.State -> Data -> Model
+receiveDataHelper model todosState data =
+    { model
+        | todosState =
+            { todosState | newTodoId = data.newTodoId, todos = data.todos }
+    }
 
 
 persist : Model -> ( Model, Cmd msg )
-persist ({ data } as model) =
-    ( model, sendData data )
+persist ({ todosState } as model) =
+    ( model, sendData <| Data todosState.todos todosState.newTodoId )
 
 
 
@@ -93,12 +99,12 @@ persist ({ data } as model) =
 
 
 view : Model -> Html Msg
-view { user, data } =
+view { user, todosState } =
     div []
         [ userInfo user
         , h1 [] [ text "Realtime Collaboration Quickstart" ]
         , p [] [ text "Now that your application is running, open this same document in a new tab or device to see syncing happen!" ]
-        , Html.map TodosMsg <| Todos.view data.todosState
+        , Html.map TodosMsg <| Todos.view todosState
         ]
 
 

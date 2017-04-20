@@ -8575,121 +8575,60 @@ var _user$project$Main$displayUserProfile = function (user) {
 		return _elm_lang$html$Html$text('Please sign in!');
 	}
 };
-var _user$project$Main$gapiConfig = function (data) {
-	return {client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com', file_name: 'elm-realtime-example', folder_name: 'ElmRealtimeExample', initData: data};
-};
+var _user$project$Main$receiveDataHelper = F3(
+	function (model, todosState, data) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				todosState: _elm_lang$core$Native_Utils.update(
+					todosState,
+					{newTodoId: data.newTodoId, todos: data.todos})
+			});
+	});
 var _user$project$Main$receiveData = _elm_lang$core$Native_Platform.incomingPort(
 	'receiveData',
 	A2(
 		_elm_lang$core$Json_Decode$andThen,
-		function (todosState) {
-			return _elm_lang$core$Json_Decode$succeed(
-				{todosState: todosState});
+		function (todos) {
+			return A2(
+				_elm_lang$core$Json_Decode$andThen,
+				function (newTodoId) {
+					return _elm_lang$core$Json_Decode$succeed(
+						{todos: todos, newTodoId: newTodoId});
+				},
+				A2(_elm_lang$core$Json_Decode$field, 'newTodoId', _elm_lang$core$Json_Decode$int));
 		},
 		A2(
 			_elm_lang$core$Json_Decode$field,
-			'todosState',
-			A2(
-				_elm_lang$core$Json_Decode$andThen,
-				function (todos) {
-					return A2(
-						_elm_lang$core$Json_Decode$andThen,
-						function (newTodoId) {
-							return A2(
-								_elm_lang$core$Json_Decode$andThen,
-								function (newTodoText) {
-									return _elm_lang$core$Json_Decode$succeed(
-										{todos: todos, newTodoId: newTodoId, newTodoText: newTodoText});
-								},
-								A2(_elm_lang$core$Json_Decode$field, 'newTodoText', _elm_lang$core$Json_Decode$string));
-						},
-						A2(_elm_lang$core$Json_Decode$field, 'newTodoId', _elm_lang$core$Json_Decode$int));
-				},
+			'todos',
+			_elm_lang$core$Json_Decode$list(
 				A2(
-					_elm_lang$core$Json_Decode$field,
-					'todos',
-					_elm_lang$core$Json_Decode$list(
-						A2(
+					_elm_lang$core$Json_Decode$andThen,
+					function (id) {
+						return A2(
 							_elm_lang$core$Json_Decode$andThen,
-							function (id) {
+							function (text) {
 								return A2(
 									_elm_lang$core$Json_Decode$andThen,
-									function (text) {
-										return A2(
-											_elm_lang$core$Json_Decode$andThen,
-											function (completed) {
-												return _elm_lang$core$Json_Decode$succeed(
-													{id: id, text: text, completed: completed});
-											},
-											A2(_elm_lang$core$Json_Decode$field, 'completed', _elm_lang$core$Json_Decode$bool));
+									function (completed) {
+										return _elm_lang$core$Json_Decode$succeed(
+											{id: id, text: text, completed: completed});
 									},
-									A2(_elm_lang$core$Json_Decode$field, 'text', _elm_lang$core$Json_Decode$string));
+									A2(_elm_lang$core$Json_Decode$field, 'completed', _elm_lang$core$Json_Decode$bool));
 							},
-							A2(_elm_lang$core$Json_Decode$field, 'id', _elm_lang$core$Json_Decode$int))))))));
+							A2(_elm_lang$core$Json_Decode$field, 'text', _elm_lang$core$Json_Decode$string));
+					},
+					A2(_elm_lang$core$Json_Decode$field, 'id', _elm_lang$core$Json_Decode$int))))));
 var _user$project$Main$sendData = _elm_lang$core$Native_Platform.outgoingPort(
 	'sendData',
 	function (v) {
 		return {
-			todosState: {
-				todos: _elm_lang$core$Native_List.toArray(v.todosState.todos).map(
-					function (v) {
-						return {id: v.id, text: v.text, completed: v.completed};
-					}),
-				newTodoId: v.todosState.newTodoId,
-				newTodoText: v.todosState.newTodoText
-			}
+			todos: _elm_lang$core$Native_List.toArray(v.todos).map(
+				function (v) {
+					return {id: v.id, text: v.text, completed: v.completed};
+				}),
+			newTodoId: v.newTodoId
 		};
-	});
-var _user$project$Main$persist = function (_p2) {
-	var _p3 = _p2;
-	return {
-		ctor: '_Tuple2',
-		_0: _p3,
-		_1: _user$project$Main$sendData(_p3.data)
-	};
-};
-var _user$project$Main$updateTodos = F2(
-	function (_p4, todosState) {
-		var _p5 = _p4;
-		return _user$project$Main$persist(
-			_elm_lang$core$Native_Utils.update(
-				_p5,
-				{
-					data: _elm_lang$core$Native_Utils.update(
-						_p5.data,
-						{todosState: todosState})
-				}));
-	});
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		var _p6 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p6.ctor) {
-			case 'ReceiveData':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{data: _p6._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'UpdateUser':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{user: _p6._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'SignIn':
-				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
-			case 'SignOut':
-				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signOut};
-			default:
-				return A2(
-					_user$project$Main$updateTodos,
-					model,
-					A2(_user$project$Todos$update, _p6._0, model.data.todosState));
-		}
 	});
 var _user$project$Main$gapiInit = _elm_lang$core$Native_Platform.outgoingPort(
 	'gapiInit',
@@ -8699,33 +8638,80 @@ var _user$project$Main$gapiInit = _elm_lang$core$Native_Platform.outgoingPort(
 			file_name: v.file_name,
 			folder_name: v.folder_name,
 			initData: {
-				todosState: {
-					todos: _elm_lang$core$Native_List.toArray(v.initData.todosState.todos).map(
-						function (v) {
-							return {id: v.id, text: v.text, completed: v.completed};
-						}),
-					newTodoId: v.initData.todosState.newTodoId,
-					newTodoText: v.initData.todosState.newTodoText
-				}
+				todos: _elm_lang$core$Native_List.toArray(v.initData.todos).map(
+					function (v) {
+						return {id: v.id, text: v.text, completed: v.completed};
+					}),
+				newTodoId: v.initData.newTodoId
 			}
 		};
 	});
 var _user$project$Main$Model = F2(
 	function (a, b) {
-		return {user: a, data: b};
+		return {user: a, todosState: b};
 	});
-var _user$project$Main$Data = function (a) {
-	return {todosState: a};
+var _user$project$Main$Data = F2(
+	function (a, b) {
+		return {todos: a, newTodoId: b};
+	});
+var _user$project$Main$gapiConfig = function (_p2) {
+	var _p3 = _p2;
+	return {
+		client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com',
+		file_name: 'elm-realtime-example',
+		folder_name: 'ElmRealtimeExample',
+		initData: A2(_user$project$Main$Data, _p3.todos, _p3.newTodoId)
+	};
 };
 var _user$project$Main$initModel = function () {
-	var data = _user$project$Main$Data(_user$project$Todos$initState);
+	var todosState = _user$project$Todos$initState;
 	return {
 		ctor: '_Tuple2',
-		_0: {user: _user$project$Gapi$SignedOut, data: data},
+		_0: {user: _user$project$Gapi$SignedOut, todosState: todosState},
 		_1: _user$project$Main$gapiInit(
-			_user$project$Main$gapiConfig(data))
+			_user$project$Main$gapiConfig(todosState))
 	};
 }();
+var _user$project$Main$persist = function (_p4) {
+	var _p5 = _p4;
+	var _p6 = _p5.todosState;
+	return {
+		ctor: '_Tuple2',
+		_0: _p5,
+		_1: _user$project$Main$sendData(
+			A2(_user$project$Main$Data, _p6.todos, _p6.newTodoId))
+	};
+};
+var _user$project$Main$update = F2(
+	function (msg, model) {
+		var _p7 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p7.ctor) {
+			case 'ReceiveData':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					A3(_user$project$Main$receiveDataHelper, model, model.todosState, _p7._0),
+					{ctor: '[]'});
+			case 'UpdateUser':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{user: _p7._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'SignIn':
+				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
+			case 'SignOut':
+				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signOut};
+			default:
+				return _user$project$Main$persist(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							todosState: A2(_user$project$Todos$update, _p7._0, model.todosState)
+						}));
+		}
+	});
 var _user$project$Main$TodosMsg = function (a) {
 	return {ctor: 'TodosMsg', _0: a};
 };
@@ -8750,8 +8736,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p7 = user;
-	if (_p7.ctor === 'SignedIn') {
+	var _p8 = user;
+	if (_p8.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -8800,14 +8786,14 @@ var _user$project$Main$userInfo = function (user) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$Main$view = function (_p8) {
-	var _p9 = _p8;
+var _user$project$Main$view = function (_p9) {
+	var _p10 = _p9;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$userInfo(_p9.user),
+			_0: _user$project$Main$userInfo(_p10.user),
 			_1: {
 				ctor: '::',
 				_0: A2(
@@ -8833,7 +8819,7 @@ var _user$project$Main$view = function (_p8) {
 						_0: A2(
 							_elm_lang$html$Html$map,
 							_user$project$Main$TodosMsg,
-							_user$project$Todos$view(_p9.data.todosState)),
+							_user$project$Todos$view(_p10.todosState)),
 						_1: {ctor: '[]'}
 					}
 				}
