@@ -30,9 +30,13 @@ function elmGapi(elmApp) {
     elm[onSignInChange].send(auth.isSignedIn.get());
   })
 
-  elm.getBasicProfile.subscribe(() => {
-    console.log('elm.getBasicProfile')
-    elm.updateUser.send(basicProfile());
+  elm.getUser.subscribe(() => {
+    console.log('elm.getUser')
+    elm.updateUser.send(userInfo());
+  })
+
+  elm.setAuthToken.subscribe((authResponse) => {
+    gapi.auth.setToken(authResponse);
   })
 
   elm.createAndLoadFile.subscribe((args) => {
@@ -44,9 +48,14 @@ function elmGapi(elmApp) {
     );
   })
 
-  elm.goRealtime.subscribe((args) => {
-    console.log('elm.goRealtime')
-    realtimeMode(...args)
+  elm.realtimeLoad.subscribe((fileId) => {
+    console.log('elm.realtimeLoad')
+    gapi.drive.realtime.load(
+      fileId, 
+      onFileLoaded, 
+      onFileInitialize, 
+      (error) => { elm.onRealtimeError.send({...error, type_: error.type })}
+    );
   })
 
   elmApp.ports.call.subscribe((f) => {
@@ -55,14 +64,12 @@ function elmGapi(elmApp) {
         gapi.auth2.getAuthInstance().signIn({
           prompt: 'select_account'
         });
+        break;
       case 'signOut':
         gapi.auth2.getAuthInstance().signOut();
+        break;
     }
   })
-
-  function updateUser(userProfile) {
-    elmApp.ports.updateUser.send(userProfile);
-  }
 
   function sendDataToElm(data, onError) {
     elmApp.ports.receiveData.send(data);
@@ -72,48 +79,10 @@ function elmGapi(elmApp) {
     elmApp.ports.sendData.subscribe(receiveElmData);
   }
 
-  /**
-   *  Initializes the API client library and sets up sign-in state
-   *  listeners.
-   */
-  function initClient(gapiConfig) {
-    console.log('initClient', gapiConfig);
-    gapi.load(COMPONENTS, () => {
-      console.log('gapi.load');
-      gapi.client.init({
-        discoveryDocs: DISCOVERY_DOCS,
-        clientId: gapiConfig.client_id,
-        scope: SCOPES
-      }).then(() => {
-        console.log('gapi.client.init success')
-        const auth = gapi.auth2.getAuthInstance();
-        // Listen for sign-in state changes.
-        auth.isSignedIn.listen(signInChange);
-
-        // Handle the initial sign-in state.
-        signInChange(auth.isSignedIn.get());
-      }, function (reason) {
-        console.log('failure');
-        console.log(reason);
-      });
-    });
-
-    function signInChange(isSignedIn) {
-      const userProfile = isSignedIn ? basicProfile() : null;
-      updateUser(userProfile);
-
-      if (isSignedIn) {
-        createAndLoadFile(
-          gapiConfig.file_name, 
-          gapiConfig.folder_name, 
-          (fileId) => realtimeMode(fileId, gapiConfig.initData)
-        );
-      }
-    }
-  }
-
-  function basicProfile() {
-    const basicProfile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile()
+  function userInfo() {
+    const user = gapi.auth2.getAuthInstance().currentUser.get();
+    const basicProfile = user.getBasicProfile();
+    const authResponse = user.getAuthResponse(true);
     if (basicProfile) {
       return {
         id: basicProfile.getId(),
@@ -121,7 +90,8 @@ function elmGapi(elmApp) {
         givenName: basicProfile.getGivenName(),
         familyName: basicProfile.getFamilyName(),
         imageUrl: basicProfile.getImageUrl(),
-        email: basicProfile.getEmail()
+        email: basicProfile.getEmail(),
+        authResponse: authResponse
       }
     } else {
       return null;

@@ -1,0 +1,10 @@
+{
+    "checks" : {
+        "ImportAll": false
+    },
+
+    "LineLengthExceeded" : {
+        "threshold": 80
+    }
+}
+

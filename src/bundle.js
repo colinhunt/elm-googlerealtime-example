@@ -8302,15 +8302,28 @@ var _user$project$Gapi$clientInitSuccess = _elm_lang$core$Native_Platform.incomi
 	'clientInitSuccess',
 	_elm_lang$core$Json_Decode$null(
 		{ctor: '_Tuple0'}));
-var _user$project$Gapi$clientInitFailure = _elm_lang$core$Native_Platform.incomingPort('clientInitFailure', _elm_lang$core$Json_Decode$string);
+var _user$project$Gapi$clientInitFailure = _elm_lang$core$Native_Platform.incomingPort(
+	'clientInitFailure',
+	A2(
+		_elm_lang$core$Json_Decode$andThen,
+		function (error) {
+			return A2(
+				_elm_lang$core$Json_Decode$andThen,
+				function (details) {
+					return _elm_lang$core$Json_Decode$succeed(
+						{error: error, details: details});
+				},
+				A2(_elm_lang$core$Json_Decode$field, 'details', _elm_lang$core$Json_Decode$string));
+		},
+		A2(_elm_lang$core$Json_Decode$field, 'error', _elm_lang$core$Json_Decode$string)));
 var _user$project$Gapi$setSignInListeners = _elm_lang$core$Native_Platform.outgoingPort(
 	'setSignInListeners',
 	function (v) {
 		return v;
 	});
 var _user$project$Gapi$onSignInChange = _elm_lang$core$Native_Platform.incomingPort('onSignInChange', _elm_lang$core$Json_Decode$bool);
-var _user$project$Gapi$getBasicProfile = _elm_lang$core$Native_Platform.outgoingPort(
-	'getBasicProfile',
+var _user$project$Gapi$getUser = _elm_lang$core$Native_Platform.outgoingPort(
+	'getUser',
 	function (v) {
 		return null;
 	});
@@ -8343,8 +8356,47 @@ var _user$project$Gapi$updateUser = _elm_lang$core$Native_Platform.incomingPort(
 															return A2(
 																_elm_lang$core$Json_Decode$andThen,
 																function (email) {
-																	return _elm_lang$core$Json_Decode$succeed(
-																		{id: id, name: name, givenName: givenName, familyName: familyName, imageUrl: imageUrl, email: email});
+																	return A2(
+																		_elm_lang$core$Json_Decode$andThen,
+																		function (authResponse) {
+																			return _elm_lang$core$Json_Decode$succeed(
+																				{id: id, name: name, givenName: givenName, familyName: familyName, imageUrl: imageUrl, email: email, authResponse: authResponse});
+																		},
+																		A2(
+																			_elm_lang$core$Json_Decode$field,
+																			'authResponse',
+																			A2(
+																				_elm_lang$core$Json_Decode$andThen,
+																				function (access_token) {
+																					return A2(
+																						_elm_lang$core$Json_Decode$andThen,
+																						function (id_token) {
+																							return A2(
+																								_elm_lang$core$Json_Decode$andThen,
+																								function (scope) {
+																									return A2(
+																										_elm_lang$core$Json_Decode$andThen,
+																										function (expires_in) {
+																											return A2(
+																												_elm_lang$core$Json_Decode$andThen,
+																												function (first_issued_at) {
+																													return A2(
+																														_elm_lang$core$Json_Decode$andThen,
+																														function (expires_at) {
+																															return _elm_lang$core$Json_Decode$succeed(
+																																{access_token: access_token, id_token: id_token, scope: scope, expires_in: expires_in, first_issued_at: first_issued_at, expires_at: expires_at});
+																														},
+																														A2(_elm_lang$core$Json_Decode$field, 'expires_at', _elm_lang$core$Json_Decode$int));
+																												},
+																												A2(_elm_lang$core$Json_Decode$field, 'first_issued_at', _elm_lang$core$Json_Decode$int));
+																										},
+																										A2(_elm_lang$core$Json_Decode$field, 'expires_in', _elm_lang$core$Json_Decode$int));
+																								},
+																								A2(_elm_lang$core$Json_Decode$field, 'scope', _elm_lang$core$Json_Decode$string));
+																						},
+																						A2(_elm_lang$core$Json_Decode$field, 'id_token', _elm_lang$core$Json_Decode$string));
+																				},
+																				A2(_elm_lang$core$Json_Decode$field, 'access_token', _elm_lang$core$Json_Decode$string))));
 																},
 																A2(_elm_lang$core$Json_Decode$field, 'email', _elm_lang$core$Json_Decode$string));
 														},
@@ -8366,6 +8418,16 @@ var _user$project$Gapi$createAndLoadFile = _elm_lang$core$Native_Platform.outgoi
 		return [v._0, v._1];
 	});
 var _user$project$Gapi$onFileLoaded = _elm_lang$core$Native_Platform.incomingPort('onFileLoaded', _elm_lang$core$Json_Decode$string);
+var _user$project$Gapi$setAuthToken = _elm_lang$core$Native_Platform.outgoingPort(
+	'setAuthToken',
+	function (v) {
+		return {access_token: v.access_token, id_token: v.id_token, scope: v.scope, expires_in: v.expires_in, first_issued_at: v.first_issued_at, expires_at: v.expires_at};
+	});
+var _user$project$Gapi$realtimeLoad = _elm_lang$core$Native_Platform.outgoingPort(
+	'realtimeLoad',
+	function (v) {
+		return {fileId: v.fileId, onFileLoaded: v.onFileLoaded, onFileInitialize: v.onFileInitialize, onError: v.onError};
+	});
 var _user$project$Gapi$State = F2(
 	function (a, b) {
 		return {clientInitStatus: a, user: b};
@@ -8374,34 +8436,38 @@ var _user$project$Gapi$Config = F4(
 	function (a, b, c, d) {
 		return {client_id: a, file_name: b, folder_name: c, initData: d};
 	});
-var _user$project$Gapi$BasicProfile = F6(
+var _user$project$Gapi$UserInfo = F7(
+	function (a, b, c, d, e, f, g) {
+		return {id: a, name: b, givenName: c, familyName: d, imageUrl: e, email: f, authResponse: g};
+	});
+var _user$project$Gapi$AuthResponse = F6(
 	function (a, b, c, d, e, f) {
-		return {id: a, name: b, givenName: c, familyName: d, imageUrl: e, email: f};
+		return {access_token: a, id_token: b, scope: c, expires_in: d, first_issued_at: e, expires_at: f};
 	});
 var _user$project$Gapi$ClientInitArgs = F3(
 	function (a, b, c) {
 		return {clientId: a, discoveryDocs: b, scope: c};
 	});
+var _user$project$Gapi$ClientInitFailureReason = F2(
+	function (a, b) {
+		return {error: a, details: b};
+	});
 var _user$project$Gapi$SignedIn = function (a) {
 	return {ctor: 'SignedIn', _0: a};
 };
 var _user$project$Gapi$SignedOut = {ctor: 'SignedOut'};
-var _user$project$Gapi$init = A2(
-	_elm_lang$core$Platform_Cmd_ops['!'],
-	{clientInitStatus: '', user: _user$project$Gapi$SignedOut},
-	{
-		ctor: '::',
-		_0: _user$project$Gapi$load(_user$project$Gapi$components),
-		_1: {ctor: '[]'}
-	});
+var _user$project$Gapi$Err = function (a) {
+	return {ctor: 'Err', _0: a};
+};
+var _user$project$Gapi$Ok = {ctor: 'Ok'};
 var _user$project$Gapi$update = F2(
 	function (msg, _p0) {
 		var _p1 = _p0;
-		var _p6 = _p1;
-		var _p5 = _p1.gapiState;
+		var _p7 = _p1;
+		var _p6 = _p1.gapiState;
 		var updateState = function (state) {
 			return _elm_lang$core$Native_Utils.update(
-				_p6,
+				_p7,
 				{gapiState: state});
 		};
 		var _p2 = A2(_elm_lang$core$Debug$log, 'Gapi.update', msg);
@@ -8409,7 +8475,7 @@ var _user$project$Gapi$update = F2(
 			case 'OnLoad':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					_p6,
+					_p7,
 					{
 						ctor: '::',
 						_0: _user$project$Gapi$clientInit(_user$project$Gapi$clientInitArgs),
@@ -8418,7 +8484,10 @@ var _user$project$Gapi$update = F2(
 			case 'ClientInitSuccess':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					_p6,
+					updateState(
+						_elm_lang$core$Native_Utils.update(
+							_p6,
+							{clientInitStatus: _user$project$Gapi$Ok})),
 					{
 						ctor: '::',
 						_0: _user$project$Gapi$setSignInListeners('onSignInChange'),
@@ -8429,9 +8498,10 @@ var _user$project$Gapi$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					updateState(
 						_elm_lang$core$Native_Utils.update(
-							_p5,
+							_p6,
 							{
-								clientInitStatus: A2(_elm_lang$core$Debug$log, 'ClientInitFailure', _p2._0)
+								clientInitStatus: _user$project$Gapi$Err(
+									A2(_elm_lang$core$Debug$log, 'ClientInitFailure', _p2._0))
 							})),
 					{ctor: '[]'});
 			case 'OnSignInChange':
@@ -8439,21 +8509,15 @@ var _user$project$Gapi$update = F2(
 				if (_p3 === true) {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
-						_p6,
+						_p7,
 						{
 							ctor: '::',
-							_0: _user$project$Gapi$getBasicProfile(
+							_0: _user$project$Gapi$getUser(
 								{ctor: '_Tuple0'}),
 							_1: {
 								ctor: '::',
 								_0: _user$project$Gapi$createAndLoadFile(
-									A2(
-										F2(
-											function (v0, v1) {
-												return {ctor: '_Tuple2', _0: v0, _1: v1};
-											}),
-										'elm-realtime-example',
-										'ElmRealtimeExample')),
+									{ctor: '_Tuple2', _0: 'elm-realtime-example', _1: 'ElmRealtimeExample'}),
 								_1: {ctor: '[]'}
 							}
 						});
@@ -8462,49 +8526,52 @@ var _user$project$Gapi$update = F2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						updateState(
 							_elm_lang$core$Native_Utils.update(
-								_p5,
+								_p6,
 								{user: _user$project$Gapi$SignedOut})),
 						{ctor: '[]'});
 				}
 			case 'UpdateUser':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					function () {
-						var _p4 = _p2._0;
-						if (_p4.ctor === 'Just') {
-							return updateState(
-								_elm_lang$core$Native_Utils.update(
-									_p5,
-									{
-										user: _user$project$Gapi$SignedIn(_p4._0)
-									}));
-						} else {
-							return updateState(
-								_elm_lang$core$Native_Utils.update(
-									_p5,
-									{user: _user$project$Gapi$SignedOut}));
-						}
-					}(),
-					{ctor: '[]'});
+				var _p4 = _p2._0;
+				if (_p4.ctor === 'Just') {
+					var _p5 = _p4._0;
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						updateState(
+							_elm_lang$core$Native_Utils.update(
+								_p6,
+								{
+									user: _user$project$Gapi$SignedIn(_p5)
+								})),
+						{
+							ctor: '::',
+							_0: _user$project$Gapi$setAuthToken(_p5.authResponse),
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						updateState(
+							_elm_lang$core$Native_Utils.update(
+								_p6,
+								{user: _user$project$Gapi$SignedOut})),
+						{ctor: '[]'});
+				}
 			default:
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					_p6,
+					_p7,
 					{ctor: '[]'});
 		}
 	});
-var _user$project$Gapi$updateUserSub = function (toMsg) {
-	return _user$project$Gapi$updateUser(
-		function (maybeProfile) {
-			var _p7 = maybeProfile;
-			if (_p7.ctor === 'Just') {
-				return toMsg(
-					_user$project$Gapi$SignedIn(_p7._0));
-			} else {
-				return toMsg(_user$project$Gapi$SignedOut);
-			}
-		});
-};
+var _user$project$Gapi$NotStarted = {ctor: 'NotStarted'};
+var _user$project$Gapi$init = A2(
+	_elm_lang$core$Platform_Cmd_ops['!'],
+	{clientInitStatus: _user$project$Gapi$NotStarted, user: _user$project$Gapi$SignedOut},
+	{
+		ctor: '::',
+		_0: _user$project$Gapi$load(_user$project$Gapi$components),
+		_1: {ctor: '[]'}
+	});
 var _user$project$Gapi$OnFileLoaded = function (a) {
 	return {ctor: 'OnFileLoaded', _0: a};
 };
@@ -8519,20 +8586,16 @@ var _user$project$Gapi$ClientInitFailure = function (a) {
 };
 var _user$project$Gapi$ClientInitSuccess = {ctor: 'ClientInitSuccess'};
 var _user$project$Gapi$OnLoad = {ctor: 'OnLoad'};
-var _user$project$Gapi$subscriptions = function (model) {
+var _user$project$Gapi$subscriptions = function (_p8) {
 	return _elm_lang$core$Platform_Sub$batch(
 		{
 			ctor: '::',
 			_0: _user$project$Gapi$onLoad(
-				function (_p8) {
-					return _user$project$Gapi$OnLoad;
-				}),
+				_elm_lang$core$Basics$always(_user$project$Gapi$OnLoad)),
 			_1: {
 				ctor: '::',
 				_0: _user$project$Gapi$clientInitSuccess(
-					function (_p9) {
-						return _user$project$Gapi$ClientInitSuccess;
-					}),
+					_elm_lang$core$Basics$always(_user$project$Gapi$ClientInitSuccess)),
 				_1: {
 					ctor: '::',
 					_0: _user$project$Gapi$clientInitFailure(_user$project$Gapi$ClientInitFailure),
@@ -8763,10 +8826,62 @@ var _user$project$Todos$view = function (_p1) {
 		});
 };
 
+var _user$project$Main$clientInitStatus = function (status) {
+	var _p0 = status;
+	switch (_p0.ctor) {
+		case 'NotStarted':
+			return A2(
+				_elm_lang$html$Html$div,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Gapi client uninitialized.'),
+					_1: {ctor: '[]'}
+				});
+		case 'Ok':
+			return A2(
+				_elm_lang$html$Html$div,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Gapi client OK. '),
+					_1: {ctor: '[]'}
+				});
+		default:
+			return A2(
+				_elm_lang$html$Html$div,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$div,
+						{ctor: '[]'},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								A2(_elm_lang$core$Basics_ops['++'], 'Gapi client init failure: ', _p0._0.error)),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									A2(_elm_lang$core$Basics_ops['++'], 'Details: ', _p0._0.details)),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}
+				});
+	}
+};
 var _user$project$Main$displayUserProfile = function (user) {
-	var _p0 = A2(_elm_lang$core$Debug$log, 'displayUserProfile', user);
-	if (_p0.ctor === 'SignedIn') {
-		var _p1 = _p0._0;
+	var _p1 = A2(_elm_lang$core$Debug$log, 'displayUserProfile', user);
+	if (_p1.ctor === 'SignedIn') {
+		var _p2 = _p1._0;
 		return A2(
 			_elm_lang$html$Html$span,
 			{ctor: '[]'},
@@ -8776,14 +8891,14 @@ var _user$project$Main$displayUserProfile = function (user) {
 					_elm_lang$html$Html$img,
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$src(_p1.imageUrl),
+						_0: _elm_lang$html$Html_Attributes$src(_p2.imageUrl),
 						_1: {ctor: '[]'}
 					},
 					{ctor: '[]'}),
 				_1: {
 					ctor: '::',
 					_0: _elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(_p1)),
+						_elm_lang$core$Basics$toString(_p2)),
 					_1: {ctor: '[]'}
 				}
 			});
@@ -8802,9 +8917,9 @@ var _user$project$Main$receiveDataHelper = F3(
 			});
 	});
 var _user$project$Main$initModel = function () {
-	var _p2 = _user$project$Gapi$init;
-	var gapiState = _p2._0;
-	var gapiCmd = _p2._1;
+	var _p3 = _user$project$Gapi$init;
+	var gapiState = _p3._0;
+	var gapiCmd = _p3._1;
 	var todosState = _user$project$Todos$initState;
 	return A2(
 		_elm_lang$core$Platform_Cmd_ops['!'],
@@ -8882,37 +8997,28 @@ var _user$project$Main$Data = F2(
 	function (a, b) {
 		return {todos: a, newTodoId: b};
 	});
-var _user$project$Main$gapiConfig = function (_p3) {
-	var _p4 = _p3;
-	return {
-		client_id: '349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com',
-		file_name: 'elm-realtime-example',
-		folder_name: 'ElmRealtimeExample',
-		initData: A2(_user$project$Main$Data, _p4.todos, _p4.newTodoId)
-	};
-};
 var _user$project$Main$initData = A2(
 	_user$project$Main$Data,
 	{ctor: '[]'},
 	0);
-var _user$project$Main$persist = function (_p5) {
-	var _p6 = _p5;
-	var _p7 = _p6.todosState;
+var _user$project$Main$persist = function (_p4) {
+	var _p5 = _p4;
+	var _p6 = _p5.todosState;
 	return {
 		ctor: '_Tuple2',
-		_0: _p6,
+		_0: _p5,
 		_1: _user$project$Main$sendData(
-			A2(_user$project$Main$Data, _p7.todos, _p7.newTodoId))
+			A2(_user$project$Main$Data, _p6.todos, _p6.newTodoId))
 	};
 };
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p8 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p8.ctor) {
+		var _p7 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p7.ctor) {
 			case 'ReceiveData':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					A3(_user$project$Main$receiveDataHelper, model, model.todosState, _p8._0),
+					A3(_user$project$Main$receiveDataHelper, model, model.todosState, _p7._0),
 					{ctor: '[]'});
 			case 'SignIn':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
@@ -8923,23 +9029,23 @@ var _user$project$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							todosState: A2(_user$project$Todos$update, _p8._0, model.todosState)
+							todosState: A2(_user$project$Todos$update, _p7._0, model.todosState)
 						}));
 			default:
-				var _p10 = _p8._0;
-				var _p9 = _p10;
-				if (_p9.ctor === 'OnFileLoaded') {
+				var _p9 = _p7._0;
+				var _p8 = _p9;
+				if (_p8.ctor === 'OnFileLoaded') {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						model,
 						{
 							ctor: '::',
 							_0: _user$project$Main$goRealtime(
-								{ctor: '_Tuple2', _0: _p9._0, _1: _user$project$Main$initData}),
+								{ctor: '_Tuple2', _0: _p8._0, _1: _user$project$Main$initData}),
 							_1: {ctor: '[]'}
 						});
 				} else {
-					return A2(_user$project$Gapi$update, _p10, model);
+					return A2(_user$project$Gapi$update, _p9, model);
 				}
 		}
 	});
@@ -8970,8 +9076,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p11 = user;
-	if (_p11.ctor === 'SignedIn') {
+	var _p10 = user;
+	if (_p10.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -9020,41 +9126,46 @@ var _user$project$Main$userInfo = function (user) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$Main$view = function (_p12) {
-	var _p13 = _p12;
+var _user$project$Main$view = function (_p11) {
+	var _p12 = _p11;
+	var _p13 = _p12.gapiState;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$userInfo(_p13.gapiState.user),
+			_0: _user$project$Main$userInfo(_p13.user),
 			_1: {
 				ctor: '::',
-				_0: A2(
-					_elm_lang$html$Html$h1,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text('Realtime Collaboration Quickstart'),
-						_1: {ctor: '[]'}
-					}),
+				_0: _user$project$Main$clientInitStatus(_p13.clientInitStatus),
 				_1: {
 					ctor: '::',
 					_0: A2(
-						_elm_lang$html$Html$p,
+						_elm_lang$html$Html$h1,
 						{ctor: '[]'},
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html$text('Now that your application is running, open this same document in a new tab or device to see syncing happen!'),
+							_0: _elm_lang$html$Html$text('Realtime Collaboration Quickstart'),
 							_1: {ctor: '[]'}
 						}),
 					_1: {
 						ctor: '::',
 						_0: A2(
-							_elm_lang$html$Html$map,
-							_user$project$Main$TodosMsg,
-							_user$project$Todos$view(_p13.todosState)),
-						_1: {ctor: '[]'}
+							_elm_lang$html$Html$p,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('\n                Now that your application is running,\n                open this same document in a new tab or\n                device to see syncing happen!\n                '),
+								_1: {ctor: '[]'}
+							}),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$map,
+								_user$project$Main$TodosMsg,
+								_user$project$Todos$view(_p12.todosState)),
+							_1: {ctor: '[]'}
+						}
 					}
 				}
 			}

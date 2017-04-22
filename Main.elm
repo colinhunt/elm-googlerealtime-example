@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module Main exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -49,16 +49,6 @@ initModel =
             ! [ gapiCmd ]
 
 
-gapiConfig : { c | newTodoId : Int, todos : List Todos.Todo } -> Gapi.Config Data
-gapiConfig { todos, newTodoId } =
-    { client_id =
-        "349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com"
-    , file_name = "elm-realtime-example"
-    , folder_name = "ElmRealtimeExample"
-    , initData = Data todos newTodoId
-    }
-
-
 initData : Data
 initData =
     Data [] 0
@@ -71,6 +61,8 @@ initData =
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case Debug.log "msg" msg of
+        let
+        merge (stat)
         ReceiveData data ->
             receiveDataHelper model model.todosState data ! []
 
@@ -85,12 +77,7 @@ update msg model =
                 { model | todosState = Todos.update todosMsg model.todosState }
 
         GapiMsg gapiMsg ->
-            case gapiMsg of
-                Gapi.OnFileLoaded fileId ->
-                    model ! [ goRealtime ( fileId, initData ) ]
-
-                _ ->
-                    Gapi.update gapiMsg model
+            Gapi.update gapiMsg |> (\(state, cmd) -> {model | gapiState = state} ! [cmd])
 
 
 receiveDataHelper : Model -> Todos.State -> Data -> Model
@@ -114,8 +101,16 @@ view : Model -> Html Msg
 view { gapiState, todosState } =
     div []
         [ userInfo gapiState.user
+        , clientInitStatus gapiState.clientInitStatus
         , h1 [] [ text "Realtime Collaboration Quickstart" ]
-        , p [] [ text "Now that your application is running, open this same document in a new tab or device to see syncing happen!" ]
+        , p []
+            [ text
+                """
+                Now that your application is running,
+                open this same document in a new tab or
+                device to see syncing happen!
+                """
+            ]
         , Html.map TodosMsg <| Todos.view todosState
         ]
 
@@ -153,6 +148,22 @@ authButton user =
             button [ onClick SignIn ] [ text "Sign In" ]
 
 
+clientInitStatus : Gapi.ClientInitStatus -> Html Msg
+clientInitStatus status =
+    case status of
+        Gapi.NotStarted ->
+            div [] [ text "Gapi client uninitialized." ]
+
+        Gapi.Ok ->
+            div [] [ text "Gapi client OK. " ]
+
+        Gapi.Err { error, details } ->
+            div []
+                [ div [] [ text <| "Gapi client init failure: " ++ error ]
+                , div [] [ text <| "Details: " ++ details ]
+                ]
+
+
 
 -- Ports
 
@@ -176,9 +187,10 @@ port goRealtime : ( String, Data ) -> Cmd msg
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch <|
-        (Sub.map GapiMsg <| Gapi.subscriptions model)
-            :: [ receiveData ReceiveData ]
+    Sub.batch
+        [ Gapi.subscriptions model |> Sub.map GapiMsg
+        , receiveData ReceiveData
+        ]
 
 
 
