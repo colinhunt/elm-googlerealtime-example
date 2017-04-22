@@ -5,8 +5,49 @@ function elmGapi(elmApp) {
         "https://www.googleapis.com/auth/drive.metadata.readonly " +
         "https://www.googleapis.com/auth/drive.file"
 
+  const elm = elmApp.ports;
 
-  elmApp.ports.gapiInit.subscribe(initClient);
+  elm.load.subscribe((components) => {
+    console.log('elm.load')
+    gapi.load(components, () => elm.onLoad.send(null));
+  });
+
+  elm.clientInit.subscribe((args) => {
+    console.log('elm.clientInit');
+    gapi.client.init(args).then(
+      () => elm.clientInitSuccess.send(null),
+      elm.clientInitFailure.send
+    )
+  })
+
+  elm.setSignInListeners.subscribe((onSignInChange) => {
+    console.log('elm.setSignInListeners')
+    const auth = gapi.auth2.getAuthInstance();
+    // Listen for sign-in state changes.
+    auth.isSignedIn.listen(elm[onSignInChange].send);
+
+    // Handle the initial sign-in state.
+    elm[onSignInChange].send(auth.isSignedIn.get());
+  })
+
+  elm.getBasicProfile.subscribe(() => {
+    console.log('elm.getBasicProfile')
+    elm.updateUser.send(basicProfile());
+  })
+
+  elm.createAndLoadFile.subscribe((args) => {
+    console.log('elm.createAndLoadFile')
+    createAndLoadFile(
+      args[0], 
+      args[1],
+      elm.onFileLoaded.send
+    );
+  })
+
+  elm.goRealtime.subscribe((args) => {
+    console.log('elm.goRealtime')
+    realtimeMode(...args)
+  })
 
   elmApp.ports.call.subscribe((f) => {
     switch (f) {
@@ -43,8 +84,8 @@ function elmGapi(elmApp) {
         discoveryDocs: DISCOVERY_DOCS,
         clientId: gapiConfig.client_id,
         scope: SCOPES
-      }).then(function (result) {
-        console.log('gapi.client.init', result)
+      }).then(() => {
+        console.log('gapi.client.init success')
         const auth = gapi.auth2.getAuthInstance();
         // Listen for sign-in state changes.
         auth.isSignedIn.listen(signInChange);
@@ -68,6 +109,22 @@ function elmGapi(elmApp) {
           (fileId) => realtimeMode(fileId, gapiConfig.initData)
         );
       }
+    }
+  }
+
+  function basicProfile() {
+    const basicProfile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile()
+    if (basicProfile) {
+      return {
+        id: basicProfile.getId(),
+        name: basicProfile.getName(),
+        givenName: basicProfile.getGivenName(),
+        familyName: basicProfile.getFamilyName(),
+        imageUrl: basicProfile.getImageUrl(),
+        email: basicProfile.getEmail()
+      }
+    } else {
+      return null;
     }
   }
 
@@ -171,20 +228,6 @@ function elmGapi(elmApp) {
     setTimeout(() => {
       return setAuthToken();
     }, authResponse.expires_in * 0.9 * 1000 )
-  }
-
-  function basicProfile() {
-    const basicProfile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile()
-    if (basicProfile) {
-      return {
-        id: basicProfile.getId(),
-        name: basicProfile.getName(),
-        givenName: basicProfile.getGivenName(),
-        familyName: basicProfile.getFamilyName(),
-        imageUrl: basicProfile.getImageUrl(),
-        email: basicProfile.getEmail()
-      }
-    }
   }
 
 

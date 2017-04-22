@@ -11,8 +11,8 @@ import Todos
 
 
 type alias Model =
-    { user : Gapi.User
-    , todosState : Todos.State
+    { todosState : Todos.State
+    , gapiState : Gapi.State
     }
 
 
@@ -26,8 +26,8 @@ type Msg
     = SignIn
     | SignOut
     | ReceiveData Data
-    | UpdateUser Gapi.User
     | TodosMsg Todos.Msg
+    | GapiMsg Gapi.Msg
 
 
 
@@ -39,12 +39,14 @@ initModel =
     let
         todosState =
             Todos.initState
+
+        ( gapiState, gapiCmd ) =
+            Gapi.init
     in
-        ( { user = Gapi.SignedOut
-          , todosState = todosState
-          }
-        , gapiInit <| gapiConfig todosState
-        )
+        { todosState = todosState
+        , gapiState = gapiState
+        }
+            ! [ gapiCmd ]
 
 
 gapiConfig : { c | newTodoId : Int, todos : List Todos.Todo } -> Gapi.Config Data
@@ -57,6 +59,11 @@ gapiConfig { todos, newTodoId } =
     }
 
 
+initData : Data
+initData =
+    Data [] 0
+
+
 
 -- Update
 
@@ -67,9 +74,6 @@ update msg model =
         ReceiveData data ->
             receiveDataHelper model model.todosState data ! []
 
-        UpdateUser user ->
-            ( { model | user = user }, Cmd.none )
-
         SignIn ->
             ( model, Gapi.signIn )
 
@@ -79,6 +83,14 @@ update msg model =
         TodosMsg todosMsg ->
             persist
                 { model | todosState = Todos.update todosMsg model.todosState }
+
+        GapiMsg gapiMsg ->
+            case gapiMsg of
+                Gapi.OnFileLoaded fileId ->
+                    model ! [ goRealtime ( fileId, initData ) ]
+
+                _ ->
+                    Gapi.update gapiMsg model
 
 
 receiveDataHelper : Model -> Todos.State -> Data -> Model
@@ -99,9 +111,9 @@ persist ({ todosState } as model) =
 
 
 view : Model -> Html Msg
-view { user, todosState } =
+view { gapiState, todosState } =
     div []
-        [ userInfo user
+        [ userInfo gapiState.user
         , h1 [] [ text "Realtime Collaboration Quickstart" ]
         , p [] [ text "Now that your application is running, open this same document in a new tab or device to see syncing happen!" ]
         , Html.map TodosMsg <| Todos.view todosState
@@ -155,7 +167,7 @@ port receiveData : (Data -> msg) -> Sub msg
 port sendData : Data -> Cmd msg
 
 
-port gapiInit : Gapi.Config Data -> Cmd msg
+port goRealtime : ( String, Data ) -> Cmd msg
 
 
 
@@ -164,10 +176,9 @@ port gapiInit : Gapi.Config Data -> Cmd msg
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ receiveData ReceiveData
-        , Gapi.updateUserSub UpdateUser
-        ]
+    Sub.batch <|
+        (Sub.map GapiMsg <| Gapi.subscriptions model)
+            :: [ receiveData ReceiveData ]
 
 
 
