@@ -41,7 +41,8 @@ type alias State =
     , fileInfo : FileInfo
     , realtimeFileStatus : RealtimeFileStatus
     , retries : Int
-    , exceptions : Maybe String
+    , exceptions : Maybe RuntimeException
+    , collaborators : List Collaborator
     }
 
 
@@ -61,6 +62,18 @@ type alias UserInfo =
     , imageUrl : String
     , email : String
     , authResponse : AuthResponse
+    }
+
+
+type alias Collaborator =
+    { color : String
+    , displayName : String
+    , isAnonymous : Bool
+    , isMe : Bool
+    , permissionId : String
+    , photoUrl : String
+    , sessionId : String
+    , userId : String
     }
 
 
@@ -94,6 +107,12 @@ type alias RealtimeError =
     }
 
 
+type alias RuntimeException =
+    { name : String
+    , message : String
+    }
+
+
 fileName : String
 fileName =
     "elm-realtime-example"
@@ -107,18 +126,6 @@ folderName =
 components : String
 components =
     "auth2:client,drive-realtime,drive-share"
-
-
-init : ( State, Cmd msg )
-init =
-    { fileInfo = NotRequested
-    , clientInitStatus = NotRequested
-    , user = SignedOut
-    , realtimeFileStatus = NotRequested
-    , retries = 0
-    , exceptions = Nothing
-    }
-        ! [ load components ]
 
 
 clientInitArgs : ClientInitArgs
@@ -141,7 +148,22 @@ type Msg
     | OnFileLoaded String
     | OnRealtimeFileLoaded Bool
     | OnRealtimeError RealtimeError
-    | RunTimeException String
+    | OnRuntimeException RuntimeException
+    | UpdateCollaborators (List Collaborator)
+    | OnReloadAuthResponse Bool
+
+
+init : ( State, Cmd msg )
+init =
+    { fileInfo = NotRequested
+    , clientInitStatus = NotRequested
+    , user = SignedOut
+    , realtimeFileStatus = NotRequested
+    , retries = 0
+    , exceptions = Nothing
+    , collaborators = []
+    }
+        ! [ load components ]
 
 
 update :
@@ -149,7 +171,7 @@ update :
     -> State
     -> ( State, Cmd msg )
 update msg state =
-    case Debug.log "Gapi.update" msg of
+    case msg of
         OnLoad ->
             state ! [ clientInit clientInitArgs ]
 
@@ -167,22 +189,22 @@ update msg state =
         OnSignInChange signedIn ->
             case signedIn of
                 True ->
-                    state
-                        ! [ getUser ()
-                          , createAndLoadFile ( fileName, folderName )
-                          ]
+                    { state | fileInfo = Loading }
+                        ! [ createAndLoadFile ( fileName, folderName ) ]
 
                 False ->
-                    { state | user = SignedOut, realtimeFileStatus = Success Closed } ! [ realtimeClose () ]
+                    { state | user = SignedOut, fileInfo = NotRequested, realtimeFileStatus = NotRequested } ! [ realtimeClose () ]
 
         UpdateUser maybeProfile ->
             case maybeProfile of
                 Just profile ->
-                    { state | user = SignedIn profile }
-                        ! [ setAuthToken profile.authResponse ]
+                    { state | user = SignedIn profile } ! []
 
                 Nothing ->
                     { state | user = SignedOut } ! []
+
+        UpdateCollaborators collaborators ->
+            { state | collaborators = collaborators } ! []
 
         OnFileLoaded fileId ->
             { state | fileInfo = Success fileId } ! [ realtimeLoad fileId ]
@@ -193,8 +215,23 @@ update msg state =
         OnRealtimeError error ->
             handleRealtimeError error state
 
-        RunTimeException e ->
-            { state | exceptions = Just e } ! []
+        OnRuntimeException e ->
+            handleRuntimeException e state
+
+        OnReloadAuthResponse _ ->
+            handleReloadAuthResponse state
+
+
+handleRuntimeException : RuntimeException -> State -> ( State, Cmd msg )
+handleRuntimeException e state =
+    let
+        newState =
+            { state | exceptions = Just e }
+    in
+        if e.name == "DocumentClosedError" then
+            handleRealtimeError (RealtimeError False e.message e.name) newState
+        else
+            newState ! []
 
 
 signIn : Cmd msg
@@ -253,13 +290,19 @@ handleRecoverableError ({ message, type_ } as error) state =
                 tryRealtimeLoad error
 
             "token_refresh_required" ->
-                (\state -> state ! [ getUser () ])
+                (\state -> state ! [ reloadAuthResponse () ])
 
             "invalid_element_type" ->
                 always <| state ! []
 
             "no_write_permission" ->
                 always <| state ! []
+
+            "DocumentClosedError" ->
+                if state.realtimeFileStatus /= Success Closed then
+                    tryRealtimeLoad error
+                else
+                    always <| state ! []
 
             _ ->
                 handleFatalError error
@@ -283,6 +326,16 @@ tryRealtimeLoad ({ message, type_ } as error) state =
 
                 Success fileId ->
                     [ realtimeLoad fileId ]
+
+
+handleReloadAuthResponse : State -> ( State, Cmd msg )
+handleReloadAuthResponse state =
+    case state.realtimeFileStatus of
+        Failure (Recoverable _ "token_refresh_required") ->
+            { state | realtimeFileStatus = Success Open } ! []
+
+        _ ->
+            state ! []
 
 
 port call : String -> Cmd msg
@@ -326,7 +379,10 @@ port createAndLoadFile : ( String, String ) -> Cmd msg
 port onFileLoaded : (String -> msg) -> Sub msg
 
 
-port setAuthToken : AuthResponse -> Cmd msg
+port reloadAuthResponse : () -> Cmd msg
+
+
+port onReloadAuthResponse : (Bool -> msg) -> Sub msg
 
 
 port realtimeLoad : String -> Cmd msg
@@ -338,10 +394,13 @@ port onRealtimeError : (RealtimeError -> msg) -> Sub msg
 port onRealtimeFileLoaded : (Bool -> msg) -> Sub msg
 
 
+port updateCollaborators : (List Collaborator -> msg) -> Sub msg
+
+
 port realtimeClose : () -> Cmd msg
 
 
-port runtimeException : (String -> msg) -> Sub msg
+port runtimeException : (RuntimeException -> msg) -> Sub msg
 
 
 subscriptions : model -> Sub Msg
@@ -355,7 +414,9 @@ subscriptions _ =
         , updateUser UpdateUser
         , onRealtimeError OnRealtimeError
         , onRealtimeFileLoaded OnRealtimeFileLoaded
-        , runtimeException RunTimeException
+        , runtimeException OnRuntimeException
+        , updateCollaborators UpdateCollaborators
+        , onReloadAuthResponse OnReloadAuthResponse
         ]
 
 

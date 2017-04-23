@@ -99,6 +99,7 @@ view : Model -> Html Msg
 view { gapiState, todosState } =
     div []
         [ userInfo gapiState.user
+        , div [] [ text <| "collaborators: " ++ ((List.length gapiState.collaborators) |> toString) ]
         , clientInitStatus gapiState.clientInitStatus
         , div [] [ text <| "fileInfo: " ++ toString gapiState.fileInfo ]
         , div [] [ text <| "realtimeFileStatus " ++ toString gapiState.realtimeFileStatus ]
@@ -195,11 +196,11 @@ clientInitStatus status =
                 ]
 
 
-exceptions : Maybe String -> Html Msg
+exceptions : Maybe Gapi.RuntimeException -> Html Msg
 exceptions e =
     case e of
-        Just msg ->
-            text <| "Unexpected exception: " ++ msg
+        Just e ->
+            text <| "Unexpected exception: " ++ (e |> toString)
 
         Nothing ->
             text ""

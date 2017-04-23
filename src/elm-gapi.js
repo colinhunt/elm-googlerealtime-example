@@ -7,14 +7,17 @@ function elmGapi(elmApp) {
 
   const elm = elmApp.ports;
 
+  let globalMap = null;
+  let globalDoc = null;
+
   elm.load.subscribe((components) => {
     console.log('elm.load')
-    gapi.load(components, () => elm.onLoad.send(null));
+    return gapi.load(components, () => elm.onLoad.send(null));
   });
 
   elm.clientInit.subscribe((args) => {
     console.log('elm.clientInit');
-    gapi.client.init(args).then(
+    return gapi.client.init(args).then(
       () => elm.clientInitSuccess.send(null),
       elm.clientInitFailure.send
     )
@@ -28,20 +31,20 @@ function elmGapi(elmApp) {
 
     // Handle the initial sign-in state.
     elm[onSignInChange].send(auth.isSignedIn.get());
+    return
   })
 
   elm.getUser.subscribe(() => {
     console.log('elm.getUser')
-    elm.updateUser.send(userInfo());
-  })
-
-  elm.setAuthToken.subscribe((authResponse) => {
-    gapi.auth.setToken(authResponse);
+    return elm.updateUser.send(userInfo());
   })
 
   elm.createAndLoadFile.subscribe((args) => {
+    const ui = userInfo();
+    elm.updateUser.send(ui);
+    gapi.auth.setToken(ui.authResponse);
     console.log('elm.createAndLoadFile')
-    createAndLoadFile(
+    return createAndLoadFile(
       args[0], 
       args[1],
       elm.onFileLoaded.send
@@ -50,39 +53,72 @@ function elmGapi(elmApp) {
 
   elm.realtimeLoad.subscribe((fileId) => {
     console.log('elm.realtimeLoad')
-    gapi.drive.realtime.load(
+    return gapi.drive.realtime.load(
       fileId, 
-      onFileLoaded, 
-      onFileInitialize, 
+      wrapped(onFileLoaded), 
+      wrapped(onFileInitialize), 
       (error) => { 
-        elm.onRealtimeError.send({
+        return elm.onRealtimeError.send({
             isFatal: error.isFatal, 
             message: error.message, 
             type_: error.type 
         })
       }
     );
+
+  });
+
+  elm.reloadAuthResponse.subscribe(() => {
+    console.log('elm.reloadAuthResponse');
+    const user = gapi.auth2.getAuthInstance().currentUser.get();
+    return user.reloadAuthResponse().then((authResponse) => {
+      console.log('user.reloadAuthResponse', authResponse)
+      elm.updateUser.send(userInfo());
+      gapi.auth.setToken(authResponse);
+      elm.onReloadAuthResponse.send(true);
+    })
   })
+
+  elm.sendData.subscribe((data) => {
+    globalMap.set('app_data', data);
+  })
+
+  elm.realtimeClose.subscribe(wrapped(() => {
+    console.log('elm.realtimeClose')
+    globalDoc.close();
+  }));
+
+  function realtimeLoad(fileId) {
+    console.log('elm.realtimeLoad')
+    return gapi.drive.realtime.load(
+      fileId, 
+      wrapped(onFileLoaded), 
+      wrapped(onFileInitialize), 
+      (error) => { 
+        return elm.onRealtimeError.send({
+            isFatal: error.isFatal, 
+            message: error.message, 
+            type_: error.type 
+        })
+      }
+    );
+  }
 
   elmApp.ports.call.subscribe((f) => {
     switch (f) {
       case 'signIn':
-        gapi.auth2.getAuthInstance().signIn({
+        return gapi.auth2.getAuthInstance().signIn({
           prompt: 'select_account'
         });
-        break;
       case 'signOut':
-        gapi.auth2.getAuthInstance().signOut();
-        break;
+        return gapi.auth2.getAuthInstance().signOut();
     }
   })
 
-  function sendDataToElm(data, onError) {
-    elmApp.ports.receiveData.send(data);
-  }
 
-  function subscribeToElmData(receiveElmData) {
-    elmApp.ports.sendData.subscribe(receiveElmData);
+
+  function sendDataToElm(data, onError) {
+    return elmApp.ports.receiveData.send(data);
   }
 
   function userInfo() {
@@ -148,37 +184,41 @@ function elmGapi(elmApp) {
   // After a file has been initialized and loaded, we can access the
   // document. We will wire up the data model to the UI.
   function onFileLoaded(doc) {
-    try {
-      console.log('onFileLoaded')
-      const map = getSetMap(doc.getModel());
-      map.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onDataChanged);
-      subscribeToElmData((data) => {
-        try { map.set('app_data', data) } catch (e) {
-          console.log(e)
-          // we need to add event listeners for collaborators joining/leaving
-          // which we can compare to the local user's profile to 
-          // tell us if we closed the document or not...
-          elm.runtimeException.send(e.toString())
-        }
-      });
-      elm.onRealtimeFileLoaded.send(true);
-      elm.realtimeClose.subscribe(() => {
-        try {
-          doc.close();
-        } catch (e) {
-          console.log(e)
-          elm.runtimeException.send(e.toString())
-        }
-      })
-    } catch (e) {
-      console.log(e)
-      elm.runtimeException.send(e.toString())
+    console.log('onFileLoaded')
+
+    doc.removeAllEventListeners();
+    doc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_LEFT, onCollaboratorChange)
+    doc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_JOINED, onCollaboratorChange)
+
+    globalDoc = doc;
+
+    const map = getSetMap(doc.getModel());
+    map.removeAllEventListeners();
+    map.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onDataChanged);
+
+    globalMap = map;
+    elm.onRealtimeFileLoaded.send(true);
+  }
+
+  function wrapped(f) {
+    return (args) => {
+      try {
+        f(args);
+      } catch (e) {
+        console.log(e);
+        elm.runtimeException.send(e);
+      }
     }
   }
+
 
   function onDataChanged(event) {
     console.log('onDataChanged', event);
     sendDataToElm(event.newValue);
+  }
+
+  function onCollaboratorChange(event) {
+    elm.updateCollaborators.send(event.currentTarget.getCollaborators())
   }
 
   // FILE CREATION / LOAD
