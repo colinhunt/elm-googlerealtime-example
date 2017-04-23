@@ -13,6 +13,11 @@ type User
     | SignedIn UserInfo
 
 
+type Resource
+    = Open
+    | Closed
+
+
 type alias ClientInitStatus =
     RemoteData ClientInitFailureReason Bool
 
@@ -21,9 +26,13 @@ type alias FileInfo =
     RemoteData Bool String
 
 
+type alias RealtimeFileStatus =
+    RemoteData ErrorType Resource
 
---type alias RealtimeFileStatus =
---    RemoteData
+
+type ErrorType
+    = Fatal String String
+    | Recoverable String String
 
 
 type alias State =
@@ -31,6 +40,8 @@ type alias State =
     , user : User
     , fileInfo : FileInfo
     , realtimeFileStatus : RealtimeFileStatus
+    , retries : Int
+    , exceptions : Maybe String
     }
 
 
@@ -83,6 +94,16 @@ type alias RealtimeError =
     }
 
 
+fileName : String
+fileName =
+    "elm-realtime-example"
+
+
+folderName : String
+folderName =
+    "ElmRealtimeExample"
+
+
 components : String
 components =
     "auth2:client,drive-realtime,drive-share"
@@ -93,6 +114,9 @@ init =
     { fileInfo = NotRequested
     , clientInitStatus = NotRequested
     , user = SignedOut
+    , realtimeFileStatus = NotRequested
+    , retries = 0
+    , exceptions = Nothing
     }
         ! [ load components ]
 
@@ -115,7 +139,9 @@ type Msg
     | OnSignInChange Bool
     | UpdateUser (Maybe UserInfo)
     | OnFileLoaded String
+    | OnRealtimeFileLoaded Bool
     | OnRealtimeError RealtimeError
+    | RunTimeException String
 
 
 update :
@@ -143,14 +169,11 @@ update msg state =
                 True ->
                     state
                         ! [ getUser ()
-                          , createAndLoadFile <|
-                                ( "elm-realtime-example"
-                                , "ElmRealtimeExample"
-                                )
+                          , createAndLoadFile ( fileName, folderName )
                           ]
 
                 False ->
-                    { state | user = SignedOut } ! []
+                    { state | user = SignedOut, realtimeFileStatus = Success Closed } ! [ realtimeClose () ]
 
         UpdateUser maybeProfile ->
             case maybeProfile of
@@ -164,8 +187,14 @@ update msg state =
         OnFileLoaded fileId ->
             { state | fileInfo = Success fileId } ! [ realtimeLoad fileId ]
 
+        OnRealtimeFileLoaded success ->
+            { state | realtimeFileStatus = Success Open } ! []
+
         OnRealtimeError error ->
             handleRealtimeError error state
+
+        RunTimeException e ->
+            { state | exceptions = Just e } ! []
 
 
 signIn : Cmd msg
@@ -178,15 +207,82 @@ signOut =
     call "signOut"
 
 
+handleFatalError : RealtimeError -> State -> ( State, Cmd msg )
+handleFatalError { message, type_ } state =
+    { state
+        | realtimeFileStatus = Failure <| Fatal message type_
+        , retries = 0
+    }
+        ! [ realtimeClose () ]
+
+
 handleRealtimeError : RealtimeError -> State -> ( State, Cmd msg )
-handleRealtimeError { isFatal, message, type_ } state =
-    (if isFatal then
-        { state | realtimeFileStatus = Failure <| Fatal message type_ } ! []
-     else
-        { state | realtimeFileStatus = Failure <| Recoverable message type_ }
-        ! [ case type_ of 
-            ]
-    )
+handleRealtimeError error state =
+    if error.isFatal then
+        handleFatalError error state
+    else
+        handleRecoverableError error state
+
+
+handleRecoverableError : RealtimeError -> State -> ( State, Cmd msg )
+handleRecoverableError ({ message, type_ } as error) state =
+    { state | realtimeFileStatus = Failure <| Recoverable message type_ }
+        |> case type_ of
+            "concurrent_creation" ->
+                tryRealtimeLoad error
+
+            "invalid_compound_operation" ->
+                always <| state ! []
+
+            "invalid_json_syntax" ->
+                always <| state ! []
+
+            "missing_property" ->
+                always <| state ! []
+
+            "not_found" ->
+                tryRealtimeLoad error
+
+            "forbidden" ->
+                (\state -> state ! [ realtimeClose () ])
+
+            "server_error" ->
+                tryRealtimeLoad error
+
+            "client_error" ->
+                tryRealtimeLoad error
+
+            "token_refresh_required" ->
+                (\state -> state ! [ getUser () ])
+
+            "invalid_element_type" ->
+                always <| state ! []
+
+            "no_write_permission" ->
+                always <| state ! []
+
+            _ ->
+                handleFatalError error
+
+
+tryRealtimeLoad : RealtimeError -> State -> ( State, Cmd msg )
+tryRealtimeLoad ({ message, type_ } as error) state =
+    if state.retries >= 5 then
+        handleFatalError error state
+    else
+        { state | retries = state.retries + 1 }
+            ! case state.fileInfo of
+                NotRequested ->
+                    [ createAndLoadFile ( fileName, folderName ) ]
+
+                Loading ->
+                    []
+
+                Failure _ ->
+                    [ createAndLoadFile ( fileName, folderName ) ]
+
+                Success fileId ->
+                    [ realtimeLoad fileId ]
 
 
 port call : String -> Cmd msg
@@ -239,6 +335,15 @@ port realtimeLoad : String -> Cmd msg
 port onRealtimeError : (RealtimeError -> msg) -> Sub msg
 
 
+port onRealtimeFileLoaded : (Bool -> msg) -> Sub msg
+
+
+port realtimeClose : () -> Cmd msg
+
+
+port runtimeException : (String -> msg) -> Sub msg
+
+
 subscriptions : model -> Sub Msg
 subscriptions _ =
     Sub.batch
@@ -249,6 +354,8 @@ subscriptions _ =
         , onFileLoaded OnFileLoaded
         , updateUser UpdateUser
         , onRealtimeError OnRealtimeError
+        , onRealtimeFileLoaded OnRealtimeFileLoaded
+        , runtimeException RunTimeException
         ]
 
 

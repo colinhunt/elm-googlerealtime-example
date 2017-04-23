@@ -61,8 +61,6 @@ initData =
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case Debug.log "msg" msg of
-        let
-        merge (stat)
         ReceiveData data ->
             receiveDataHelper model model.todosState data ! []
 
@@ -77,7 +75,7 @@ update msg model =
                 { model | todosState = Todos.update todosMsg model.todosState }
 
         GapiMsg gapiMsg ->
-            Gapi.update gapiMsg |> (\(state, cmd) -> {model | gapiState = state} ! [cmd])
+            Gapi.update gapiMsg model.gapiState |> (\( state, cmd ) -> { model | gapiState = state } ! [ cmd ])
 
 
 receiveDataHelper : Model -> Todos.State -> Data -> Model
@@ -102,6 +100,10 @@ view { gapiState, todosState } =
     div []
         [ userInfo gapiState.user
         , clientInitStatus gapiState.clientInitStatus
+        , div [] [ text <| "fileInfo: " ++ toString gapiState.fileInfo ]
+        , div [] [ text <| "realtimeFileStatus " ++ toString gapiState.realtimeFileStatus ]
+        , div [] [ text <| "retries: " ++ toString gapiState.retries ]
+        , exceptions gapiState.exceptions
         , h1 [] [ text "Realtime Collaboration Quickstart" ]
         , p []
             [ text
@@ -111,8 +113,34 @@ view { gapiState, todosState } =
                 device to see syncing happen!
                 """
             ]
-        , Html.map TodosMsg <| Todos.view todosState
+        , todosView todosState gapiState.realtimeFileStatus
         ]
+
+
+todosView : Todos.State -> Gapi.RealtimeFileStatus -> Html Msg
+todosView todosState realtimeStatus =
+    case realtimeStatus of
+        Gapi.NotRequested ->
+            text "Sign in to see your todos"
+
+        Gapi.Loading ->
+            text "Loading todos..."
+
+        Gapi.Failure error ->
+            case error of
+                Gapi.Fatal message type_ ->
+                    text "Fatal error, please refresh the page."
+
+                Gapi.Recoverable message type_ ->
+                    text "Recoverable error, please try refreshing the page or wait or sign in again."
+
+        Gapi.Success status ->
+            case status of
+                Gapi.Open ->
+                    Html.map TodosMsg <| Todos.view todosState
+
+                Gapi.Closed ->
+                    text "The realtime document is closed. Please refresh the page or sign in again."
 
 
 userInfo : Gapi.User -> Html Msg
@@ -127,7 +155,7 @@ userInfo user =
 
 displayUserProfile : Gapi.User -> Html Msg
 displayUserProfile user =
-    case Debug.log "displayUserProfile" user of
+    case user of
         Gapi.SignedIn profile ->
             span []
                 [ img [ src profile.imageUrl ] []
@@ -151,17 +179,30 @@ authButton user =
 clientInitStatus : Gapi.ClientInitStatus -> Html Msg
 clientInitStatus status =
     case status of
-        Gapi.NotStarted ->
+        Gapi.NotRequested ->
             div [] [ text "Gapi client uninitialized." ]
 
-        Gapi.Ok ->
+        Gapi.Loading ->
+            div [] [ text "Gapi client loading..." ]
+
+        Gapi.Success _ ->
             div [] [ text "Gapi client OK. " ]
 
-        Gapi.Err { error, details } ->
+        Gapi.Failure { error, details } ->
             div []
                 [ div [] [ text <| "Gapi client init failure: " ++ error ]
                 , div [] [ text <| "Details: " ++ details ]
                 ]
+
+
+exceptions : Maybe String -> Html Msg
+exceptions e =
+    case e of
+        Just msg ->
+            text <| "Unexpected exception: " ++ msg
+
+        Nothing ->
+            text ""
 
 
 
