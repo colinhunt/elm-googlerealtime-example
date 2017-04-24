@@ -85,7 +85,7 @@ function elmGapi(elmApp) {
 
   elm.realtimeClose.subscribe(wrapped(() => {
     console.log('elm.realtimeClose')
-    globalDoc.close();
+    globalDoc && globalDoc.close();
   }));
 
   function realtimeLoad(fileId) {

@@ -8826,12 +8826,14 @@ var _user$project$Gapi$update = F2(
 						_elm_lang$core$Native_Utils.update(
 							state,
 							{user: _user$project$Gapi$SignedOut, fileInfo: _user$project$Gapi$NotRequested, realtimeFileStatus: _user$project$Gapi$NotRequested}),
-						{
+						_elm_lang$core$Native_Utils.eq(
+							state.realtimeFileStatus,
+							_user$project$Gapi$Success(_user$project$Gapi$Open)) ? {
 							ctor: '::',
 							_0: _user$project$Gapi$realtimeClose(
 								{ctor: '_Tuple0'}),
 							_1: {ctor: '[]'}
-						});
+						} : {ctor: '[]'});
 				}
 			case 'UpdateUser':
 				var _p13 = _p11._0;

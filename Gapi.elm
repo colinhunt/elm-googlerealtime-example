@@ -132,7 +132,8 @@ clientInitArgs : ClientInitArgs
 clientInitArgs =
     { discoveryDocs =
         [ "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest" ]
-    , clientId = """349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com"""
+    , clientId =
+        "349913990095-ce6i4ji4j08akc882di10qsm8menvoa8.apps.googleusercontent.com"
     , scope =
         "https://www.googleapis.com/auth/drive.metadata.readonly "
             ++ "https://www.googleapis.com/auth/drive.file"
@@ -193,7 +194,15 @@ update msg state =
                         ! [ createAndLoadFile ( fileName, folderName ) ]
 
                 False ->
-                    { state | user = SignedOut, fileInfo = NotRequested, realtimeFileStatus = NotRequested } ! [ realtimeClose () ]
+                    { state
+                        | user = SignedOut
+                        , fileInfo = NotRequested
+                        , realtimeFileStatus = NotRequested
+                    }
+                        ! if state.realtimeFileStatus == Success Open then
+                            [ realtimeClose () ]
+                          else
+                            []
 
         UpdateUser maybeProfile ->
             case maybeProfile of
