@@ -9052,20 +9052,20 @@ var _user$project$Todos$todo = function (todo) {
 	var className = todo.completed ? 'completedTodo' : '';
 	return A2(
 		_elm_lang$html$Html$li,
-		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class(className),
+			_1: {ctor: '[]'}
+		},
 		{
 			ctor: '::',
 			_0: A2(
 				_elm_lang$html$Html$span,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$class(className),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html_Events$onClick(
-							_user$project$Todos$ToggleTodo(todo.id)),
-						_1: {ctor: '[]'}
-					}
+					_0: _elm_lang$html$Html_Events$onClick(
+						_user$project$Todos$ToggleTodo(todo.id)),
+					_1: {ctor: '[]'}
 				},
 				{
 					ctor: '::',
@@ -9082,11 +9082,7 @@ var _user$project$Todos$todo = function (todo) {
 							_user$project$Todos$DeleteTodo(todo.id)),
 						_1: {ctor: '[]'}
 					},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text('x'),
-						_1: {ctor: '[]'}
-					}),
+					{ctor: '[]'}),
 				_1: {ctor: '[]'}
 			}
 		});
@@ -9131,8 +9127,12 @@ var _user$project$Todos$todoForm = function (newTodoText) {
 					_elm_lang$html$Html$button,
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$type_('submit'),
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$class('submit'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$type_('submit'),
+							_1: {ctor: '[]'}
+						}
 					},
 					{
 						ctor: '::',
@@ -9145,11 +9145,15 @@ var _user$project$Todos$todoForm = function (newTodoText) {
 						_elm_lang$html$Html$button,
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$type_('button'),
+							_0: _elm_lang$html$Html_Attributes$class('cancel'),
 							_1: {
 								ctor: '::',
-								_0: _elm_lang$html$Html_Events$onClick(_user$project$Todos$Cancel),
-								_1: {ctor: '[]'}
+								_0: _elm_lang$html$Html_Attributes$type_('button'),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Events$onClick(_user$project$Todos$Cancel),
+									_1: {ctor: '[]'}
+								}
 							}
 						},
 						{
@@ -9254,33 +9258,141 @@ var _user$project$Main$clientInitStatus = function (status) {
 				});
 	}
 };
-var _user$project$Main$displayUserProfile = function (user) {
+var _user$project$Main$profileModal = function (info) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('profileModal'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$div,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(info.name),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$div,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(info.email),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			}
+		});
+};
+var _user$project$Main$profileToggle = function (user) {
 	var _p2 = user;
 	if (_p2.ctor === 'SignedIn') {
-		var _p3 = _p2._0;
+		return A2(
+			_elm_lang$html$Html$img,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$src(_p2._0.imageUrl),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'});
+	} else {
 		return A2(
 			_elm_lang$html$Html$span,
 			{ctor: '[]'},
-			{
+			{ctor: '[]'});
+	}
+};
+var _user$project$Main$myFooter = function (gapiState) {
+	return A2(
+		_elm_lang$html$Html$footer,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$h4,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Status:'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
 				ctor: '::',
 				_0: A2(
-					_elm_lang$html$Html$img,
+					_elm_lang$html$Html$div,
+					{ctor: '[]'},
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$src(_p3.imageUrl),
+						_0: _elm_lang$html$Html$text(
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								'collaborators: ',
+								_elm_lang$core$Basics$toString(
+									_elm_lang$core$List$length(gapiState.collaborators)))),
 						_1: {ctor: '[]'}
-					},
-					{ctor: '[]'}),
+					}),
 				_1: {
 					ctor: '::',
-					_0: _elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(_p3)),
-					_1: {ctor: '[]'}
+					_0: _user$project$Main$clientInitStatus(gapiState.clientInitStatus),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										'fileInfo: ',
+										_elm_lang$core$Basics$toString(gapiState.fileInfo))),
+								_1: {ctor: '[]'}
+							}),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$div,
+								{ctor: '[]'},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text(
+										A2(
+											_elm_lang$core$Basics_ops['++'],
+											'realtimeFileStatus ',
+											_elm_lang$core$Basics$toString(gapiState.realtimeFileStatus))),
+									_1: {ctor: '[]'}
+								}),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$div,
+									{ctor: '[]'},
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html$text(
+											A2(
+												_elm_lang$core$Basics_ops['++'],
+												'retries: ',
+												_elm_lang$core$Basics$toString(gapiState.retries))),
+										_1: {ctor: '[]'}
+									}),
+								_1: {
+									ctor: '::',
+									_0: _user$project$Main$exceptions(gapiState.exceptions),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					}
 				}
-			});
-	} else {
-		return _elm_lang$html$Html$text('Please sign in!');
-	}
+			}
+		});
 };
 var _user$project$Main$receiveDataHelper = F3(
 	function (model, todosState, data) {
@@ -9293,9 +9405,9 @@ var _user$project$Main$receiveDataHelper = F3(
 			});
 	});
 var _user$project$Main$initModel = function () {
-	var _p4 = _user$project$Gapi$init;
-	var gapiState = _p4._0;
-	var gapiCmd = _p4._1;
+	var _p3 = _user$project$Gapi$init;
+	var gapiState = _p3._0;
+	var gapiCmd = _p3._1;
 	var todosState = _user$project$Todos$initState;
 	return A2(
 		_elm_lang$core$Platform_Cmd_ops['!'],
@@ -9377,24 +9489,24 @@ var _user$project$Main$initData = A2(
 	_user$project$Main$Data,
 	{ctor: '[]'},
 	0);
-var _user$project$Main$persist = function (_p5) {
-	var _p6 = _p5;
-	var _p7 = _p6.todosState;
+var _user$project$Main$persist = function (_p4) {
+	var _p5 = _p4;
+	var _p6 = _p5.todosState;
 	return {
 		ctor: '_Tuple2',
-		_0: _p6,
+		_0: _p5,
 		_1: _user$project$Main$sendData(
-			A2(_user$project$Main$Data, _p7.todos, _p7.newTodoId))
+			A2(_user$project$Main$Data, _p6.todos, _p6.newTodoId))
 	};
 };
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p8 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p8.ctor) {
+		var _p7 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p7.ctor) {
 			case 'ReceiveData':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					A3(_user$project$Main$receiveDataHelper, model, model.todosState, _p8._0),
+					A3(_user$project$Main$receiveDataHelper, model, model.todosState, _p7._0),
 					{ctor: '[]'});
 			case 'SignIn':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signIn};
@@ -9405,23 +9517,23 @@ var _user$project$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							todosState: A2(_user$project$Todos$update, _p8._0, model.todosState)
+							todosState: A2(_user$project$Todos$update, _p7._0, model.todosState)
 						}));
 			default:
-				return function (_p9) {
-					var _p10 = _p9;
+				return function (_p8) {
+					var _p9 = _p8;
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{gapiState: _p10._0}),
+							{gapiState: _p9._0}),
 						{
 							ctor: '::',
-							_0: _p10._1,
+							_0: _p9._1,
 							_1: {ctor: '[]'}
 						});
 				}(
-					A2(_user$project$Gapi$update, _p8._0, model.gapiState));
+					A2(_user$project$Gapi$update, _p7._0, model.gapiState));
 		}
 	});
 var _user$project$Main$GapiMsg = function (a) {
@@ -9432,22 +9544,22 @@ var _user$project$Main$TodosMsg = function (a) {
 };
 var _user$project$Main$todosView = F2(
 	function (todosState, realtimeStatus) {
-		var _p11 = realtimeStatus;
-		switch (_p11.ctor) {
+		var _p10 = realtimeStatus;
+		switch (_p10.ctor) {
 			case 'NotRequested':
 				return _elm_lang$html$Html$text('Sign in to see your todos');
 			case 'Loading':
 				return _elm_lang$html$Html$text('Loading todos...');
 			case 'Failure':
-				var _p12 = _p11._0;
-				if (_p12.ctor === 'Fatal') {
+				var _p11 = _p10._0;
+				if (_p11.ctor === 'Fatal') {
 					return _elm_lang$html$Html$text('Fatal error, please refresh the page.');
 				} else {
 					return _elm_lang$html$Html$text('Recoverable error, please try refreshing the page or wait or sign in again.');
 				}
 			default:
-				var _p13 = _p11._0;
-				if (_p13.ctor === 'Open') {
+				var _p12 = _p10._0;
+				if (_p12.ctor === 'Open') {
 					return A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$TodosMsg,
@@ -9456,6 +9568,43 @@ var _user$project$Main$todosView = F2(
 					return _elm_lang$html$Html$text('The realtime document is closed. Please refresh the page or sign in again.');
 				}
 		}
+	});
+var _user$project$Main$content = F2(
+	function (gapiState, todosState) {
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$class('content'),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$h3,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('Elm Realtime Collaboration'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$p,
+						{ctor: '[]'},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('\n            Now that your application is running,\n            open this same document in a new tab or\n            device to see syncing happen!\n            '),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(_user$project$Main$todosView, todosState, gapiState.realtimeFileStatus),
+						_1: {ctor: '[]'}
+					}
+				}
+			});
 	});
 var _user$project$Main$ReceiveData = function (a) {
 	return {ctor: 'ReceiveData', _0: a};
@@ -9478,8 +9627,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p14 = user;
-	if (_p14.ctor === 'SignedIn') {
+	var _p13 = user;
+	if (_p13.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -9507,25 +9656,32 @@ var _user$project$Main$authButton = function (user) {
 			});
 	}
 };
-var _user$project$Main$userInfo = function (user) {
+var _user$project$Main$myHeader = function (user) {
 	return A2(
-		_elm_lang$html$Html$div,
+		_elm_lang$html$Html$header,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: A2(
-				_elm_lang$html$Html$span,
-				{ctor: '[]'},
-				{
+			_0: _user$project$Main$profileToggle(user),
+			_1: {
+				ctor: '::',
+				_0: function () {
+					var _p14 = user;
+					if (_p14.ctor === 'SignedIn') {
+						return _user$project$Main$profileModal(_p14._0);
+					} else {
+						return A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{ctor: '[]'});
+					}
+				}(),
+				_1: {
 					ctor: '::',
 					_0: _user$project$Main$authButton(user),
-					_1: {
-						ctor: '::',
-						_0: _user$project$Main$displayUserProfile(user),
-						_1: {ctor: '[]'}
-					}
-				}),
-			_1: {ctor: '[]'}
+					_1: {ctor: '[]'}
+				}
+			}
 		});
 };
 var _user$project$Main$view = function (_p15) {
@@ -9536,101 +9692,14 @@ var _user$project$Main$view = function (_p15) {
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$userInfo(_p17.user),
+			_0: _user$project$Main$myHeader(_p17.user),
 			_1: {
 				ctor: '::',
-				_0: A2(
-					_elm_lang$html$Html$div,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								'collaborators: ',
-								_elm_lang$core$Basics$toString(
-									_elm_lang$core$List$length(_p17.collaborators)))),
-						_1: {ctor: '[]'}
-					}),
+				_0: A2(_user$project$Main$content, _p17, _p16.todosState),
 				_1: {
 					ctor: '::',
-					_0: _user$project$Main$clientInitStatus(_p17.clientInitStatus),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_elm_lang$html$Html$div,
-							{ctor: '[]'},
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html$text(
-									A2(
-										_elm_lang$core$Basics_ops['++'],
-										'fileInfo: ',
-										_elm_lang$core$Basics$toString(_p17.fileInfo))),
-								_1: {ctor: '[]'}
-							}),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_elm_lang$html$Html$div,
-								{ctor: '[]'},
-								{
-									ctor: '::',
-									_0: _elm_lang$html$Html$text(
-										A2(
-											_elm_lang$core$Basics_ops['++'],
-											'realtimeFileStatus ',
-											_elm_lang$core$Basics$toString(_p17.realtimeFileStatus))),
-									_1: {ctor: '[]'}
-								}),
-							_1: {
-								ctor: '::',
-								_0: A2(
-									_elm_lang$html$Html$div,
-									{ctor: '[]'},
-									{
-										ctor: '::',
-										_0: _elm_lang$html$Html$text(
-											A2(
-												_elm_lang$core$Basics_ops['++'],
-												'retries: ',
-												_elm_lang$core$Basics$toString(_p17.retries))),
-										_1: {ctor: '[]'}
-									}),
-								_1: {
-									ctor: '::',
-									_0: _user$project$Main$exceptions(_p17.exceptions),
-									_1: {
-										ctor: '::',
-										_0: A2(
-											_elm_lang$html$Html$h1,
-											{ctor: '[]'},
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html$text('Realtime Collaboration Quickstart'),
-												_1: {ctor: '[]'}
-											}),
-										_1: {
-											ctor: '::',
-											_0: A2(
-												_elm_lang$html$Html$p,
-												{ctor: '[]'},
-												{
-													ctor: '::',
-													_0: _elm_lang$html$Html$text('\n                Now that your application is running,\n                open this same document in a new tab or\n                device to see syncing happen!\n                '),
-													_1: {ctor: '[]'}
-												}),
-											_1: {
-												ctor: '::',
-												_0: A2(_user$project$Main$todosView, _p16.todosState, _p17.realtimeFileStatus),
-												_1: {ctor: '[]'}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+					_0: _user$project$Main$myFooter(_p17),
+					_1: {ctor: '[]'}
 				}
 			}
 		});

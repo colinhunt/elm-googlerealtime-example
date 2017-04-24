@@ -1,3 +1,99 @@
+body {
+    background-color: #4f5a64;
+    color: #c5cdd3;
+    margin: 0;
+    font-family: sans-serif;
+    max-width: 500px;
+    margin: auto;
+}
+
+header {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    background-color: #637583;
+}
+
+.content {
+    margin: 8px;
+}
+
+footer {
+    padding: 8px;
+    background-color: #637583;
+}
+
+img {
+    max-height: 50px;
+    border: 2px solid #c5cdd3;
+    border-radius: 5px;
+}
+
+header button {
+    background: none;
+    color: #8b9ba7;
+}
+
+button {
+    border: none;
+}
+
+input {
+    width: 100%;
+    background-color: #c5cdd3;
+    /* color: #334c63; */
+    border: none;
+    padding: 5px;
+}
+
+form button {
+    width: 50px;
+}
+
+button.submit {
+    background-color: #637583;
+}
+
+button.cancel {
+    background-color: #424e57;
+}
+
+form {
+    display: flex;
+    height: 35px;
+}
+
+.profileModal div {
+    padding: 4px 0;
+}
+
 .completedTodo {
     text-decoration: line-through;
+    background-color: #424e57;
+}
+
+ul {
+    padding: 0;
+}
+
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #637583;
+    min-height: 30px;
+    border: 2px solid #4f5a64;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+li > button {
+    background-color: #4e0000;
+    height: 20px;
+    width: 20px;
+    border-radius: 4px;
+}
+
+li > span {
+    max-width: 80%;
 }

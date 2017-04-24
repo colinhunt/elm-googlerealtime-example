@@ -98,23 +98,36 @@ persist ({ todosState } as model) =
 view : Model -> Html Msg
 view { gapiState, todosState } =
     div []
-        [ userInfo gapiState.user
+        [ myHeader gapiState.user
+        , content gapiState todosState
+        , myFooter gapiState
+        ]
+
+
+content gapiState todosState =
+    div [ class "content" ]
+        [ h3 [] [ text "Elm Realtime Collaboration" ]
+        , p []
+            [ text
+                """
+            Now that your application is running,
+            open this same document in a new tab or
+            device to see syncing happen!
+            """
+            ]
+        , todosView todosState gapiState.realtimeFileStatus
+        ]
+
+
+myFooter gapiState =
+    footer []
+        [ h4 [] [ text "Status:" ]
         , div [] [ text <| "collaborators: " ++ ((List.length gapiState.collaborators) |> toString) ]
         , clientInitStatus gapiState.clientInitStatus
         , div [] [ text <| "fileInfo: " ++ toString gapiState.fileInfo ]
         , div [] [ text <| "realtimeFileStatus " ++ toString gapiState.realtimeFileStatus ]
         , div [] [ text <| "retries: " ++ toString gapiState.retries ]
         , exceptions gapiState.exceptions
-        , h1 [] [ text "Realtime Collaboration Quickstart" ]
-        , p []
-            [ text
-                """
-                Now that your application is running,
-                open this same document in a new tab or
-                device to see syncing happen!
-                """
-            ]
-        , todosView todosState gapiState.realtimeFileStatus
         ]
 
 
@@ -144,27 +157,28 @@ todosView todosState realtimeStatus =
                     text "The realtime document is closed. Please refresh the page or sign in again."
 
 
-userInfo : Gapi.User -> Html Msg
-userInfo user =
-    div []
-        [ span []
-            [ authButton user
-            , displayUserProfile user
-            ]
+myHeader : Gapi.User -> Html Msg
+myHeader user =
+    header []
+        [ profileToggle user
+        , case user of
+            Gapi.SignedIn info ->
+                profileModal info
+
+            Gapi.SignedOut ->
+                div [] []
+        , authButton user
         ]
 
 
-displayUserProfile : Gapi.User -> Html Msg
-displayUserProfile user =
+profileToggle : Gapi.User -> Html Msg
+profileToggle user =
     case user of
         Gapi.SignedIn profile ->
-            span []
-                [ img [ src profile.imageUrl ] []
-                , text (toString profile)
-                ]
+            img [ src profile.imageUrl ] []
 
         Gapi.SignedOut ->
-            text "Please sign in!"
+            span [] []
 
 
 authButton : Gapi.User -> Html Msg
@@ -175,6 +189,14 @@ authButton user =
 
         Gapi.SignedOut ->
             button [ onClick SignIn ] [ text "Sign In" ]
+
+
+profileModal : Gapi.UserInfo -> Html Msg
+profileModal info =
+    div [ class "profileModal" ]
+        [ div [] [ text info.name ]
+        , div [] [ text info.email ]
+        ]
 
 
 clientInitStatus : Gapi.ClientInitStatus -> Html Msg

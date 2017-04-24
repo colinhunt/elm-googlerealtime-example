@@ -88,7 +88,7 @@ view : State -> Html Msg
 view { newTodoText, todos } =
     div []
         [ todoForm newTodoText
-        , ul [] <| List.map todo <| todos
+        , ul [] (todos |> List.map todo)
         ]
 
 
@@ -102,8 +102,8 @@ todoForm newTodoText =
             , value newTodoText
             ]
             []
-        , button [ type_ "submit" ] [ text "+" ]
-        , button [ type_ "button", onClick Cancel ] [ text "x" ]
+        , button [ class "submit", type_ "submit" ] [ text "+" ]
+        , button [ class "cancel", type_ "button", onClick Cancel ] [ text "x" ]
         ]
 
 
@@ -116,9 +116,9 @@ todo todo =
             else
                 ""
     in
-        li []
+        li [ class className ]
             [ span
-                [ class className, onClick <| ToggleTodo todo.id ]
+                [ onClick <| ToggleTodo todo.id ]
                 [ text todo.text ]
-            , button [ onClick <| DeleteTodo todo.id ] [ text "x" ]
+            , button [ onClick <| DeleteTodo todo.id ] []
             ]
