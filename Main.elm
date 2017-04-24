@@ -75,7 +75,10 @@ update msg model =
                 { model | todosState = Todos.update todosMsg model.todosState }
 
         GapiMsg gapiMsg ->
-            Gapi.update gapiMsg model.gapiState |> (\( state, cmd ) -> { model | gapiState = state } ! [ cmd ])
+            Gapi.update gapiMsg model.gapiState
+                |> (\( state, cmd ) ->
+                        { model | gapiState = state } ! [ cmd ]
+                   )
 
 
 receiveDataHelper : Model -> Todos.State -> Data -> Model
@@ -104,6 +107,7 @@ view { gapiState, todosState } =
         ]
 
 
+content : Gapi.State -> Todos.State -> Html Msg
 content gapiState todosState =
     div [ class "content" ]
         [ h3 [] [ text "Elm Realtime Collaboration" ]
@@ -119,6 +123,7 @@ content gapiState todosState =
         ]
 
 
+myFooter : Gapi.State -> Html Msg
 myFooter gapiState =
     footer []
         [ h4 [] [ text "Status:" ]
