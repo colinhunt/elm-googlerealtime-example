@@ -9541,28 +9541,38 @@ var _user$project$Main$todosView = function (model) {
 	if (_p10.ctor === 'SignedOut') {
 		return _elm_lang$html$Html$text('Sign in to see your todos.');
 	} else {
-		var _p11 = model.gapiState.realtimeFileStatus;
+		var _p11 = model.gapiState.fileInfo;
 		switch (_p11.ctor) {
 			case 'NotRequested':
-				return _elm_lang$html$Html$text('The realtime document hasn\'t been requested yet.');
+				return _elm_lang$html$Html$text('Requesting the application file...');
 			case 'Loading':
-				return _elm_lang$html$Html$text('Loading todos...');
+				return _elm_lang$html$Html$text('Loading the application file...');
 			case 'Failure':
-				var _p12 = _p11._0;
-				if (_p12.ctor === 'Fatal') {
-					return _elm_lang$html$Html$text('Fatal error, please refresh the page.');
-				} else {
-					return _elm_lang$html$Html$text('Recoverable error, please try refreshing\n                                the page or wait or sign in again.');
-				}
+				return _elm_lang$html$Html$text('\n                        Failed to load the application file from drive.\n                        Please try refreshing the page.\n                            ');
 			default:
-				var _p13 = _p11._0;
-				if (_p13.ctor === 'Open') {
-					return A2(
-						_elm_lang$html$Html$map,
-						_user$project$Main$TodosMsg,
-						_user$project$Todos$view(model.todosState));
-				} else {
-					return _elm_lang$html$Html$text('The realtime document is closed.\n                                Please refresh the page or sign in again.');
+				var _p12 = model.gapiState.realtimeFileStatus;
+				switch (_p12.ctor) {
+					case 'NotRequested':
+						return _elm_lang$html$Html$text('Requesting the realtime document...');
+					case 'Loading':
+						return _elm_lang$html$Html$text('Loading todos...');
+					case 'Failure':
+						var _p13 = _p12._0;
+						if (_p13.ctor === 'Fatal') {
+							return _elm_lang$html$Html$text('Fatal error, please refresh the page.');
+						} else {
+							return _elm_lang$html$Html$text('\n    Recoverable error, please try refreshing the page or wait or sign in again.\n                                        ');
+						}
+					default:
+						var _p14 = _p12._0;
+						if (_p14.ctor === 'Open') {
+							return A2(
+								_elm_lang$html$Html$map,
+								_user$project$Main$TodosMsg,
+								_user$project$Todos$view(model.todosState));
+						} else {
+							return _elm_lang$html$Html$text('\n    The realtime document is closed. Please refresh the page or sign in again.\n                                         ');
+						}
 				}
 		}
 	}
@@ -9624,8 +9634,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p14 = user;
-	if (_p14.ctor === 'SignedIn') {
+	var _p15 = user;
+	if (_p15.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -9663,9 +9673,9 @@ var _user$project$Main$myHeader = function (user) {
 			_1: {
 				ctor: '::',
 				_0: function () {
-					var _p15 = user;
-					if (_p15.ctor === 'SignedIn') {
-						return _user$project$Main$profileModal(_p15._0);
+					var _p16 = user;
+					if (_p16.ctor === 'SignedIn') {
+						return _user$project$Main$profileModal(_p16._0);
 					} else {
 						return A2(
 							_elm_lang$html$Html$div,
@@ -9681,21 +9691,21 @@ var _user$project$Main$myHeader = function (user) {
 			}
 		});
 };
-var _user$project$Main$view = function (_p16) {
-	var _p17 = _p16;
-	var _p18 = _p17.gapiState;
+var _user$project$Main$view = function (_p17) {
+	var _p18 = _p17;
+	var _p19 = _p18.gapiState;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$myHeader(_p18.user),
+			_0: _user$project$Main$myHeader(_p19.user),
 			_1: {
 				ctor: '::',
-				_0: _user$project$Main$content(_p17),
+				_0: _user$project$Main$content(_p18),
 				_1: {
 					ctor: '::',
-					_0: _user$project$Main$myFooter(_p18),
+					_0: _user$project$Main$myFooter(_p19),
 					_1: {ctor: '[]'}
 				}
 			}

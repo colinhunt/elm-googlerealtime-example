@@ -135,11 +135,27 @@ myFooter : Gapi.State -> Html Msg
 myFooter gapiState =
     footer []
         [ h4 [] [ text "Status:" ]
-        , div [] [ text <| "collaborators: " ++ ((List.length gapiState.collaborators) |> toString) ]
+        , div []
+            [ text <|
+                "collaborators: "
+                    ++ ((List.length gapiState.collaborators) |> toString)
+            ]
         , clientInitStatus gapiState.clientInitStatus
-        , div [] [ text <| "fileInfo: " ++ toString gapiState.fileInfo ]
-        , div [] [ text <| "realtimeFileStatus " ++ toString gapiState.realtimeFileStatus ]
-        , div [] [ text <| "retries: " ++ toString gapiState.retries ]
+        , div []
+            [ text <|
+                "fileInfo: "
+                    ++ toString gapiState.fileInfo
+            ]
+        , div []
+            [ text <|
+                "realtimeFileStatus "
+                    ++ toString gapiState.realtimeFileStatus
+            ]
+        , div []
+            [ text <|
+                "retries: "
+                    ++ toString gapiState.retries
+            ]
         , exceptions gapiState.exceptions
         ]
 
@@ -151,30 +167,48 @@ todosView model =
             text "Sign in to see your todos."
 
         Gapi.SignedIn _ ->
-            case model.gapiState.realtimeFileStatus of
+            case model.gapiState.fileInfo of
                 Gapi.NotRequested ->
-                    text "The realtime document hasn't been requested yet."
+                    text "Requesting the application file..."
 
                 Gapi.Loading ->
-                    text "Loading todos..."
+                    text "Loading the application file..."
 
-                Gapi.Failure error ->
-                    case error of
-                        Gapi.Fatal message type_ ->
-                            text "Fatal error, please refresh the page."
+                Gapi.Failure _ ->
+                    text """
+                        Failed to load the application file from drive.
+                        Please try refreshing the page.
+                            """
 
-                        Gapi.Recoverable message type_ ->
-                            text """Recoverable error, please try refreshing
-                                the page or wait or sign in again."""
+                Gapi.Success _ ->
+                    case model.gapiState.realtimeFileStatus of
+                        Gapi.NotRequested ->
+                            text "Requesting the realtime document..."
 
-                Gapi.Success status ->
-                    case status of
-                        Gapi.Open ->
-                            Html.map TodosMsg <| Todos.view model.todosState
+                        Gapi.Loading ->
+                            text "Loading todos..."
 
-                        Gapi.Closed ->
-                            text """The realtime document is closed.
-                                Please refresh the page or sign in again."""
+                        Gapi.Failure error ->
+                            case error of
+                                Gapi.Fatal message type_ ->
+                                    text "Fatal error, please refresh the page."
+
+                                Gapi.Recoverable message type_ ->
+                                    text
+                                        """
+    Recoverable error, please try refreshing the page or wait or sign in again.
+                                        """
+
+                        Gapi.Success status ->
+                            case status of
+                                Gapi.Open ->
+                                    Html.map TodosMsg <|
+                                        Todos.view model.todosState
+
+                                Gapi.Closed ->
+                                    text """
+    The realtime document is closed. Please refresh the page or sign in again.
+                                         """
 
 
 myHeader : Gapi.User -> Html Msg
