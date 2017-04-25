@@ -80,6 +80,7 @@ function elmGapi(elmApp) {
   })
 
   elm.sendData.subscribe((data) => {
+    console.log('elm.sendData')
     globalMap.set('app_data', data);
   })
 
@@ -148,7 +149,6 @@ function elmGapi(elmApp) {
   function onFileInitialize(model) {
     console.log('onFileInitialize')
     const map = model.collaborativeMap();
-    map.set('app_data', initData);
     model.getRoot().set(key(0), map);
   }
 
@@ -159,12 +159,15 @@ function elmGapi(elmApp) {
     for (let i = 0; i < attempts; i++) {
       if (!root.has(key(i))) {
         const map = model.createMap();
-        map.set('app_data', initData);
         root.set(key(i), map);
         console.log('Created new data at key', key(i));
-      }          
+      }
       const map = root.get(key(i));
       const data = map.get('app_data');
+      if (data === undefined || data === null) {
+        console.log('Map is empty, assuming new data to come.')
+        return map;
+      }
       try {
         sendDataToElm(data);
       } catch (e) {

@@ -73,6 +73,7 @@ update msg model =
         TodosMsg todosMsg ->
             persist
                 { model | todosState = Todos.update todosMsg model.todosState }
+                model.todosState
 
         GapiMsg gapiMsg ->
             Gapi.update gapiMsg model.gapiState
@@ -89,9 +90,16 @@ receiveDataHelper model todosState data =
     }
 
 
-persist : Model -> ( Model, Cmd msg )
-persist ({ todosState } as model) =
-    ( model, sendData <| Data todosState.todos todosState.newTodoId )
+persist : Model -> Todos.State -> ( Model, Cmd msg )
+persist ({ todosState } as newModel) oldTodosState =
+    newModel
+        ! if
+            ( todosState.todos, todosState.newTodoId )
+                /= ( oldTodosState.todos, oldTodosState.newTodoId )
+          then
+            [ sendData <| Data todosState.todos todosState.newTodoId ]
+          else
+            []
 
 
 
@@ -99,18 +107,18 @@ persist ({ todosState } as model) =
 
 
 view : Model -> Html Msg
-view { gapiState, todosState } =
+view ({ gapiState } as model) =
     div []
         [ myHeader gapiState.user
-        , content gapiState todosState
+        , content model
         , myFooter gapiState
         ]
 
 
-content : Gapi.State -> Todos.State -> Html Msg
-content gapiState todosState =
+content : Model -> Html Msg
+content model =
     div [ class "content" ]
-        [ h3 [] [ text "Elm Realtime Collaboration" ]
+        [ h3 [] [ text "Elm Realtime Collaboration Demo" ]
         , p []
             [ text
                 """
@@ -119,7 +127,7 @@ content gapiState todosState =
             device to see syncing happen!
             """
             ]
-        , todosView todosState gapiState.realtimeFileStatus
+        , todosView model
         ]
 
 
@@ -136,30 +144,37 @@ myFooter gapiState =
         ]
 
 
-todosView : Todos.State -> Gapi.RealtimeFileStatus -> Html Msg
-todosView todosState realtimeStatus =
-    case realtimeStatus of
-        Gapi.NotRequested ->
-            text "Sign in to see your todos"
+todosView : Model -> Html Msg
+todosView model =
+    case model.gapiState.user of
+        Gapi.SignedOut ->
+            text "Sign in to see your todos."
 
-        Gapi.Loading ->
-            text "Loading todos..."
+        Gapi.SignedIn _ ->
+            case model.gapiState.realtimeFileStatus of
+                Gapi.NotRequested ->
+                    text "The realtime document hasn't been requested yet."
 
-        Gapi.Failure error ->
-            case error of
-                Gapi.Fatal message type_ ->
-                    text "Fatal error, please refresh the page."
+                Gapi.Loading ->
+                    text "Loading todos..."
 
-                Gapi.Recoverable message type_ ->
-                    text "Recoverable error, please try refreshing the page or wait or sign in again."
+                Gapi.Failure error ->
+                    case error of
+                        Gapi.Fatal message type_ ->
+                            text "Fatal error, please refresh the page."
 
-        Gapi.Success status ->
-            case status of
-                Gapi.Open ->
-                    Html.map TodosMsg <| Todos.view todosState
+                        Gapi.Recoverable message type_ ->
+                            text """Recoverable error, please try refreshing
+                                the page or wait or sign in again."""
 
-                Gapi.Closed ->
-                    text "The realtime document is closed. Please refresh the page or sign in again."
+                Gapi.Success status ->
+                    case status of
+                        Gapi.Open ->
+                            Html.map TodosMsg <| Todos.view model.todosState
+
+                        Gapi.Closed ->
+                            text """The realtime document is closed.
+                                Please refresh the page or sign in again."""
 
 
 myHeader : Gapi.User -> Html Msg
@@ -245,9 +260,6 @@ port receiveData : (Data -> msg) -> Sub msg
 {-| out
 -}
 port sendData : Data -> Cmd msg
-
-
-port goRealtime : ( String, Data ) -> Cmd msg
 
 
 

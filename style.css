@@ -12,6 +12,7 @@ header {
     display: flex;
     justify-content: space-between;
     background-color: #637583;
+    min-height: 54px;
 }
 
 .content {
@@ -32,10 +33,21 @@ img {
 header button {
     background: none;
     color: #8b9ba7;
+    align-self: center;
+}
+
+button:active {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+:focus {
+    outline: none;
 }
 
 button {
     border: none;
+    cursor: pointer;
+    border-radius: 5px;
 }
 
 input {
@@ -87,6 +99,10 @@ li {
     padding: 6px;
 }
 
+li > button:active {
+    background-color: red;
+}
+
 li > button {
     background-color: #4e0000;
     height: 20px;
@@ -96,4 +112,10 @@ li > button {
 
 li > span {
     max-width: 80%;
+    cursor: pointer;
+    user-select: none;
+}
+
+li > span:active {
+    color: rgba(0, 0, 0, 0.3);
 }

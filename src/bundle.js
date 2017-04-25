@@ -9463,20 +9463,6 @@ var _user$project$Main$sendData = _elm_lang$core$Native_Platform.outgoingPort(
 			newTodoId: v.newTodoId
 		};
 	});
-var _user$project$Main$goRealtime = _elm_lang$core$Native_Platform.outgoingPort(
-	'goRealtime',
-	function (v) {
-		return [
-			v._0,
-			{
-			todos: _elm_lang$core$Native_List.toArray(v._1.todos).map(
-				function (v) {
-					return {id: v.id, text: v.text, completed: v.completed};
-				}),
-			newTodoId: v._1.newTodoId
-		}
-		];
-	});
 var _user$project$Main$Model = F2(
 	function (a, b) {
 		return {todosState: a, gapiState: b};
@@ -9489,16 +9475,22 @@ var _user$project$Main$initData = A2(
 	_user$project$Main$Data,
 	{ctor: '[]'},
 	0);
-var _user$project$Main$persist = function (_p4) {
-	var _p5 = _p4;
-	var _p6 = _p5.todosState;
-	return {
-		ctor: '_Tuple2',
-		_0: _p5,
-		_1: _user$project$Main$sendData(
-			A2(_user$project$Main$Data, _p6.todos, _p6.newTodoId))
-	};
-};
+var _user$project$Main$persist = F2(
+	function (_p4, oldTodosState) {
+		var _p5 = _p4;
+		var _p6 = _p5.todosState;
+		return A2(
+			_elm_lang$core$Platform_Cmd_ops['!'],
+			_p5,
+			(!_elm_lang$core$Native_Utils.eq(
+				{ctor: '_Tuple2', _0: _p6.todos, _1: _p6.newTodoId},
+				{ctor: '_Tuple2', _0: oldTodosState.todos, _1: oldTodosState.newTodoId})) ? {
+				ctor: '::',
+				_0: _user$project$Main$sendData(
+					A2(_user$project$Main$Data, _p6.todos, _p6.newTodoId)),
+				_1: {ctor: '[]'}
+			} : {ctor: '[]'});
+	});
 var _user$project$Main$update = F2(
 	function (msg, model) {
 		var _p7 = A2(_elm_lang$core$Debug$log, 'msg', msg);
@@ -9513,12 +9505,14 @@ var _user$project$Main$update = F2(
 			case 'SignOut':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Gapi$signOut};
 			case 'TodosMsg':
-				return _user$project$Main$persist(
+				return A2(
+					_user$project$Main$persist,
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
 							todosState: A2(_user$project$Todos$update, _p7._0, model.todosState)
-						}));
+						}),
+					model.todosState);
 			default:
 				return function (_p8) {
 					var _p9 = _p8;
@@ -9542,70 +9536,73 @@ var _user$project$Main$GapiMsg = function (a) {
 var _user$project$Main$TodosMsg = function (a) {
 	return {ctor: 'TodosMsg', _0: a};
 };
-var _user$project$Main$todosView = F2(
-	function (todosState, realtimeStatus) {
-		var _p10 = realtimeStatus;
-		switch (_p10.ctor) {
+var _user$project$Main$todosView = function (model) {
+	var _p10 = model.gapiState.user;
+	if (_p10.ctor === 'SignedOut') {
+		return _elm_lang$html$Html$text('Sign in to see your todos.');
+	} else {
+		var _p11 = model.gapiState.realtimeFileStatus;
+		switch (_p11.ctor) {
 			case 'NotRequested':
-				return _elm_lang$html$Html$text('Sign in to see your todos');
+				return _elm_lang$html$Html$text('The realtime document hasn\'t been requested yet.');
 			case 'Loading':
 				return _elm_lang$html$Html$text('Loading todos...');
 			case 'Failure':
-				var _p11 = _p10._0;
-				if (_p11.ctor === 'Fatal') {
+				var _p12 = _p11._0;
+				if (_p12.ctor === 'Fatal') {
 					return _elm_lang$html$Html$text('Fatal error, please refresh the page.');
 				} else {
-					return _elm_lang$html$Html$text('Recoverable error, please try refreshing the page or wait or sign in again.');
+					return _elm_lang$html$Html$text('Recoverable error, please try refreshing\n                                the page or wait or sign in again.');
 				}
 			default:
-				var _p12 = _p10._0;
-				if (_p12.ctor === 'Open') {
+				var _p13 = _p11._0;
+				if (_p13.ctor === 'Open') {
 					return A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$TodosMsg,
-						_user$project$Todos$view(todosState));
+						_user$project$Todos$view(model.todosState));
 				} else {
-					return _elm_lang$html$Html$text('The realtime document is closed. Please refresh the page or sign in again.');
+					return _elm_lang$html$Html$text('The realtime document is closed.\n                                Please refresh the page or sign in again.');
 				}
 		}
-	});
-var _user$project$Main$content = F2(
-	function (gapiState, todosState) {
-		return A2(
-			_elm_lang$html$Html$div,
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$class('content'),
-				_1: {ctor: '[]'}
-			},
-			{
+	}
+};
+var _user$project$Main$content = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('content'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$h3,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Elm Realtime Collaboration Demo'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
 				ctor: '::',
 				_0: A2(
-					_elm_lang$html$Html$h3,
+					_elm_lang$html$Html$p,
 					{ctor: '[]'},
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html$text('Elm Realtime Collaboration'),
+						_0: _elm_lang$html$Html$text('\n            Now that your application is running,\n            open this same document in a new tab or\n            device to see syncing happen!\n            '),
 						_1: {ctor: '[]'}
 					}),
 				_1: {
 					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$p,
-						{ctor: '[]'},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('\n            Now that your application is running,\n            open this same document in a new tab or\n            device to see syncing happen!\n            '),
-							_1: {ctor: '[]'}
-						}),
-					_1: {
-						ctor: '::',
-						_0: A2(_user$project$Main$todosView, todosState, gapiState.realtimeFileStatus),
-						_1: {ctor: '[]'}
-					}
+					_0: _user$project$Main$todosView(model),
+					_1: {ctor: '[]'}
 				}
-			});
-	});
+			}
+		});
+};
 var _user$project$Main$ReceiveData = function (a) {
 	return {ctor: 'ReceiveData', _0: a};
 };
@@ -9627,8 +9624,8 @@ var _user$project$Main$subscriptions = function (model) {
 var _user$project$Main$SignOut = {ctor: 'SignOut'};
 var _user$project$Main$SignIn = {ctor: 'SignIn'};
 var _user$project$Main$authButton = function (user) {
-	var _p13 = user;
-	if (_p13.ctor === 'SignedIn') {
+	var _p14 = user;
+	if (_p14.ctor === 'SignedIn') {
 		return A2(
 			_elm_lang$html$Html$button,
 			{
@@ -9666,9 +9663,9 @@ var _user$project$Main$myHeader = function (user) {
 			_1: {
 				ctor: '::',
 				_0: function () {
-					var _p14 = user;
-					if (_p14.ctor === 'SignedIn') {
-						return _user$project$Main$profileModal(_p14._0);
+					var _p15 = user;
+					if (_p15.ctor === 'SignedIn') {
+						return _user$project$Main$profileModal(_p15._0);
 					} else {
 						return A2(
 							_elm_lang$html$Html$div,
@@ -9684,21 +9681,21 @@ var _user$project$Main$myHeader = function (user) {
 			}
 		});
 };
-var _user$project$Main$view = function (_p15) {
-	var _p16 = _p15;
-	var _p17 = _p16.gapiState;
+var _user$project$Main$view = function (_p16) {
+	var _p17 = _p16;
+	var _p18 = _p17.gapiState;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$myHeader(_p17.user),
+			_0: _user$project$Main$myHeader(_p18.user),
 			_1: {
 				ctor: '::',
-				_0: A2(_user$project$Main$content, _p17, _p16.todosState),
+				_0: _user$project$Main$content(_p17),
 				_1: {
 					ctor: '::',
-					_0: _user$project$Main$myFooter(_p17),
+					_0: _user$project$Main$myFooter(_p18),
 					_1: {ctor: '[]'}
 				}
 			}
