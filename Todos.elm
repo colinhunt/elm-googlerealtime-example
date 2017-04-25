@@ -88,7 +88,8 @@ view : State -> Html Msg
 view { newTodoText, todos } =
     div []
         [ todoForm newTodoText
-        , ul [] (todos |> List.map todo)
+        , ul [] (todos |> List.filter (not << .completed) |> List.map todo)
+        , ul [] (todos |> List.filter .completed |> List.map todo)
         ]
 
 

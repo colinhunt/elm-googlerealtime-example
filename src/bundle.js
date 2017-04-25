@@ -9168,6 +9168,7 @@ var _user$project$Todos$todoForm = function (newTodoText) {
 };
 var _user$project$Todos$view = function (_p1) {
 	var _p2 = _p1;
+	var _p4 = _p2.todos;
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
@@ -9179,8 +9180,33 @@ var _user$project$Todos$view = function (_p1) {
 				_0: A2(
 					_elm_lang$html$Html$ul,
 					{ctor: '[]'},
-					A2(_elm_lang$core$List$map, _user$project$Todos$todo, _p2.todos)),
-				_1: {ctor: '[]'}
+					A2(
+						_elm_lang$core$List$map,
+						_user$project$Todos$todo,
+						A2(
+							_elm_lang$core$List$filter,
+							function (_p3) {
+								return !function (_) {
+									return _.completed;
+								}(_p3);
+							},
+							_p4))),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$ul,
+						{ctor: '[]'},
+						A2(
+							_elm_lang$core$List$map,
+							_user$project$Todos$todo,
+							A2(
+								_elm_lang$core$List$filter,
+								function (_) {
+									return _.completed;
+								},
+								_p4))),
+					_1: {ctor: '[]'}
+				}
 			}
 		});
 };
