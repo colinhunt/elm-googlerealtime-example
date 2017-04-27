@@ -142,7 +142,7 @@ function elmGapi(elmApp) {
 
   function onFileInitialize(model) {
     console.log('onFileInitialize')
-    const map = model.collaborativeMap();
+    const map = model.createMap();
     model.getRoot().set(key(0), map);
   }
 
