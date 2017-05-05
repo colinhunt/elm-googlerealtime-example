@@ -79,9 +79,9 @@ function elmGapi(elmApp) {
     })
   })
 
-  elm.sendData.subscribe((data) => {
-    console.log('elm.sendData')
-    globalMap.set('app_data', data);
+  elm.persistTodo.subscribe((item) => {
+    console.log('elm.persistTodo')
+    globalMap.set(item[0], item[1])
   })
 
   elm.realtimeClose.subscribe(wrapped(() => {
@@ -118,8 +118,8 @@ function elmGapi(elmApp) {
 
 
 
-  function sendDataToElm(data, onError) {
-    return elmApp.ports.receiveData.send(data);
+  function sendItemToElm(item, onError) {
+    return elm.receiveItem.send(item);
   }
 
   function userInfo() {
@@ -163,8 +163,8 @@ function elmGapi(elmApp) {
         console.log('Created new data at key', key(i));
       }
       const map = root.get(key(i));
-      const data = map.get('app_data');
-      if (data === undefined || data === null) {
+      const data = map.items();
+      if (data.length === 0) {
         console.log('Map is empty, assuming new data to come.')
         return map;
       }
