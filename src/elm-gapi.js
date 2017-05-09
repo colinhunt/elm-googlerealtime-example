@@ -1,10 +1,4 @@
 function elmGapi(elmApp) {
-  const COMPONENTS = 'auth2:client,drive-realtime,drive-share';
-  const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
-  const SCOPES = 
-        "https://www.googleapis.com/auth/drive.metadata.readonly " +
-        "https://www.googleapis.com/auth/drive.file"
-
   const elm = elmApp.ports;
 
   let globalMap = null;
@@ -148,7 +142,7 @@ function elmGapi(elmApp) {
 
   function onFileInitialize(model) {
     console.log('onFileInitialize')
-    const map = model.collaborativeMap();
+    const map = model.createMap();
     model.getRoot().set(key(0), map);
   }
 
